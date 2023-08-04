@@ -1,52 +1,15 @@
+
 import ch.qos.logback.classic.Level
 import com.bkahlert.kommons.logging.SLF4J
 import com.bkahlert.kommons.logging.logback.Logback
-import mdns.HostServices
+import mdns.JmDNS
+import mdns.ServiceInfo
+import mdns.ServiceListener
+import mdns.ServiceTypeListener
 import mdns.serviceInfo
-
-/**
- * @see <a href="file:///System/Library/CoreServices/PlatformSupport.plist">PlatformSupport.plist</a>
- */
-val platformSupportModels = listOf(
-    "MacBookPro14,2",
-    "MacBookPro14,3",
-    "MacBook10,1",
-    "MacBookPro14,1",
-    "MacBookPro15,2",
-    "iMac18,1",
-    "iMac18,2",
-    "iMac18,3",
-    "iMacPro1,1",
-    "iMac19,1",
-    "iMac19,2",
-    "MacBookAir8,2",
-    "MacBookAir8,1",
-    "MacBookPro16,1",
-    "MacPro7,1",
-    "Macmini8,1",
-    "iMac20,1",
-    "iMac20,2",
-    "MacBookPro15,4",
-    "MacBookPro16,2",
-    "MacBookPro16,4",
-    "MacBookPro16,3",
-    "MacBookAir9,1",
-    "MacBookPro15,1",
-    "MacBookPro15,3",
-)
-
-/**
- * `ls /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport/ | pbcopy`
- */
-val deviceSupport = listOf(
-    "11.0", "11.1", "11.2", "11.3", "11.4",
-    "12.0", "12.1", "12.2", "12.3", "12.4",
-    "13.0", "13.1", "13.2", "13.3", "13.4", "13.5", "13.6", "13.7",
-    "14.0", "14.1", "14.2", "14.3", "14.4", "14.5",
-    "15.0", "15.2", "15.4", "15.5",
-    "16.0", "16.1", "16.4",
-).flatMap { listOf("iPhone$it", "iPad$it", "iPadPro$it") }
-    .map { it.replace('.', ',') }
+import model.Models
+import javax.jmdns.JmDNS
+import kotlin.concurrent.thread
 
 val logger = SLF4J.getLogger("mdns-test")
 
@@ -62,52 +25,8 @@ fun main(args: Array<String>) {
         "com.bkahlert.netmon.nmap" to Level.INFO,
     )
 
-    /**
-     * Sources:
-     * - /System/Library/CoreServices/PlatformSupport.plist
-     */
-    val models = listOf(
-        "AirPortExtreme5",
-        "MacBookPro15,1",
-        "Mac14,13",
-        "iPhone1,1",
-        "iPhone10,3",
-        "RaspberryPi",
-        "RaspberryPi3",
-        "RaspberryPi3B",
-        "HP-LaserJet-5200",
-        "CustomServer2019",
-        "PC",
-        "MacMini",
-    )
-
-    val buildSet = buildSet {
-        addAll(platformSupportModels)
-        addAll(deviceSupport)
-        addAll(models)
-    }
-    val hostServices = buildSet.map { model ->
-        HostServices("host-$model") {
-            add(
-                serviceInfo(
-                    name = "test-$model",
-                    type = "_device-info._tcp.local.",
-                    text = "model=$model",
-                )
-            )
-            add(
-                serviceInfo(
-                    name = "test-$model",
-                    type = "_smb._tcp.local.",
-                    port = 445,
-                ),
-            )
-        }
-    }
-
-    val hostCount = hostServices.size
-    val serviceCount = hostServices.sumOf { it.services.size }
-    logger.info("Testing $hostCount hosts with a total of $serviceCount services...")
+    listen()
+//    publishServices()
 
     while (!Thread.interrupted()) {
         try {
@@ -118,4 +37,188 @@ fun main(args: Array<String>) {
     }
 
     logger.info("Done.")
+}
+
+
+private fun listen() {
+    val serviceListener = object : ServiceListener {
+        override fun serviceAdded(instance: JmDNS, type: String, name: String) {
+            logger.info("Service added: $name.$type")
+        }
+
+        override fun serviceResolved(instance: JmDNS, type: String, name: String, info: ServiceInfo) {
+            logger.info("Service resolved: $name.$type: $info")
+        }
+
+        override fun serviceRemoved(instance: JmDNS, type: String, name: String) {
+            logger.info("Service removed: $name.$type")
+        }
+    }
+    val serviceTypeListener = object : ServiceTypeListener {
+        override fun serviceTypeAdded(instance: JmDNS, type: String) {
+            logger.info("Service type added: $type")
+            instance.addServiceListener(type, serviceListener)
+        }
+
+        override fun subTypeForServiceTypeAdded(instance: JmDNS, typeWithSubtype: String) {
+            logger.info("Service sub type added: $typeWithSubtype")
+        }
+    }
+
+    mdns.JmDNS().apply {
+//        addServiceTypeListener(serviceTypeListener)
+//        addServiceListener("_googlecast._tcp.local.", serviceListener)
+    }
+
+    fixServices()
+}
+
+private fun fixServices() {
+    val jmDNS = mdns.JmDNS(name = "host-airportextreme5")
+    logger.info("Registering services to fix")
+    jmDNS.apply {
+//        registerService(
+//            javax.jmdns.ServiceInfo.create(
+//                "_airportextreme5._tcp.local.",
+//                "test_airportextreme5",
+//                "",
+//                0,
+//                0,
+//                0,
+//                false,
+//                ""
+//            )
+//        )
+//        registerService(
+//            ServiceInfoImpl(
+//                "_tcp.local.",
+//                "_airportextreme5",
+//                "",
+//                0,
+//                0,
+//                0,
+//                false,
+//                ""
+//            )
+//        )
+//        registerService(
+//            ServiceInfoImpl(
+//                "_airportextreme5._tcp.local.",
+//                "_airportextreme5",
+//                "",
+//                0,
+//                0,
+//                0,
+//                false,
+//                ""
+//            )
+//        )
+//        registerService(
+//            ServiceInfoImpl(
+//                ".local.",
+//                "",
+//                "",
+//                0,
+//                0,
+//                0,
+//                false,
+//                ""
+//            )
+//        )
+    }
+    thread {
+        Thread.sleep(5000)
+        logger.warn("Unregistering services to fix")
+        jmDNS.unregisterAllServices()
+    }
+}
+
+
+private fun publishServices() {
+    val serviceGroups = buildMap {
+        if (true) putAll(Models)
+
+
+//        putAll(AllModels.apple_watch)
+//        putAll(AllModels.appletv)
+//        putAll(AllModels.emac)
+//        putAll(AllModels.homepod)
+//        putAll(AllModels.ibook)
+//        putAll(AllModels.imac)
+//        putAll(AllModels.imac_pro)
+//        putAll(AllModels.ipad)
+//        putAll(AllModels.iphone)
+//        putAll(AllModels.ipod)
+//        putAll(AllModels.mac_server_g3)
+//        putAll(AllModels.macbook)
+//        putAll(AllModels.macbook_air)
+//        putAll(AllModels.macbookpro)
+//        putAll(AllModels.macmini)
+//        putAll(AllModels.macpro)
+//        putAll(AllModels.macstudio)
+//        putAll(AllModels.powerbook_g3)
+//        putAll(AllModels.powerbook_g4)
+//        putAll(AllModels.powermac_g3)
+//        putAll(AllModels.powermac_g4)
+//        putAll(AllModels.powermac_g5)
+//        putAll(AllModels.xserve)
+    }.mapValues { (name, model) ->
+        listOf(
+            serviceInfo(
+                name = "test-$name",
+                type = "_device-info._tcp.local.",
+            ) {
+                put("model", model)
+            },
+            serviceInfo(
+                name = "test-$name",
+                type = "_smb._tcp.local.",
+                port = 445,
+            ) {
+                put("u", "pi")
+                put("p", "pi")
+            },
+            serviceInfo(
+                name = "test-$name",
+                type = "_ssh._tcp.local.",
+                port = 22,
+            ),
+            serviceInfo(
+                name = "test-$name",
+                type = "_sftp-ssh._tcp.local.",
+                port = 22,
+            ),
+            serviceInfo(
+                name = "test-$name",
+                type = "_http._tcp.local.",
+                port = 80,
+            ) {
+                put("path", "/unsecure")
+                put("u", "pi")
+                put("p", "pi")
+            },
+            serviceInfo(
+                name = "test-$name",
+                type = "_https._tcp.local.",
+                port = 443,
+            ) {
+                put("path", "/secure")
+                put("u", "pi")
+                put("p", "pi")
+            },
+        )
+    }
+
+    val serviceCount = serviceGroups.entries.sumOf { (_, services) -> services.size }
+    logger.info("Testing ${serviceGroups.size} groups with a total of $serviceCount services...")
+
+    serviceGroups.forEach { (name, services) ->
+        val host = "host-$name"
+        logger.info("Publishing ${services.size} services for $host...")
+        JmDNS(name = host).apply {
+            services.forEach { service ->
+                registerService(service)
+            }
+        }
+    }
 }

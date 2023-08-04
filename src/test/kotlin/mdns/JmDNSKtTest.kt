@@ -4,7 +4,7 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 import javax.jmdns.ServiceInfo
 
-class ServiceInfosKtTest {
+class JmDNSKtTest {
 
     @Test
     fun service_info() {

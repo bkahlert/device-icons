@@ -14,6 +14,7 @@ repositories {
 dependencies {
     implementation("org.jmdns:jmdns:3.5.8") { because("mDNS / Bonjour testing") }
     implementation(platform("com.bkahlert.kommons:kommons-bom:2.8.0"))
+    implementation("com.bkahlert.kommons:kommons-exec")
     implementation("com.bkahlert.kommons:kommons-time")
     implementation("com.bkahlert.kommons:kommons-uri")
     implementation("com.bkahlert.kommons:kommons-logging-core")

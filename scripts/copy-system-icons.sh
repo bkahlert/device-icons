@@ -4,10 +4,10 @@ DESTINATION=$1
 
 if [ -z "$DESTINATION" ]; then
     DESTINATION="$PWD/icns"
-    mkdir -p "$DESTINATION" >/dev/null 2>&1 || { printf "\033[31mERROR: Failed to create \033[3m%s\033[23m.\033[0m\n" "$DESTINATION" >&2 && exit 1; }
+    mkdir -p "$DESTINATION" >/dev/null 2>&1 || { printf "\e[31mERROR: Failed to create \e[3m%s\e[23m.\e[0m\n" "$DESTINATION" >&2 && exit 1; }
 fi
 
-[ -d "$DESTINATION" ] || { printf "\033[31mERROR: The destination \033[3m%s\033[23m is no directory.\033[0m\n" "$DESTINATION" >&2 && exit 1; }
+[ -d "$DESTINATION" ] || { printf "\e[31mERROR: The destination \e[3m%s\e[23m is no directory.\e[0m\n" "$DESTINATION" >&2 && exit 1; }
 
 find /System/Library -type f -regex '.*\.icns' -exec cp {} "$DESTINATION"/ \;
 
