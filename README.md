@@ -1,4 +1,4 @@
-# device-icons
+# Device Icons [![CI](https://github.com/bkahlert/device-icons/actions/workflows/ci.yml/badge.svg)](https://github.com/bkahlert/device-icons/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/bkahlert/device-icons?color=69B745&label=Release&logo=GitHub&logoColor=fff)](https://github.com/bkahlert/device-icons/releases/latest) [![License](https://img.shields.io/github/license/bkahlert/device-icons?color=29ABE2&label=License)](https://github.com/bkahlert/device-icons/blob/main/LICENSE) [![Buy Me A Coffee](https://img.shields.io/static/v1?label=&message=%E2%98%95%20Buy%20Me%20A%20Coffee&color=FFDD00)](https://www.buymeacoffee.com/bkahlert)
 
 Finder draws a network device with the icon of the Apple device its `_device-info._tcp` record names: `model=MacPro7,1`
 gives the 2019 Mac Pro tower. Two commands work with that:
