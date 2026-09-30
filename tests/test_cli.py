@@ -1,7 +1,5 @@
 import json
-import os
 import re
-import stat
 from pathlib import Path
 
 import pytest
@@ -54,19 +52,14 @@ class TestMain:
             main(["dump"])
 
     class TestPreview:
-        def test_rejects_a_name_for_several_model_identifiers_as_usage_error(self, capsys):
+        def test_rejects_a_name_for_several_model_identifiers_as_usage_error(self, capsys, monkeypatch):
+            monkeypatch.setattr("sys.platform", "darwin")
+
             with pytest.raises(SystemExit) as exit:
                 main(["preview", "--name", "Rack", "MacPro7,1", "Xserve3,1"])
 
             assert exit.value.code == 2
             assert "exactly one model identifier" in capsys.readouterr().err
-
-        def test_returns_once_the_registrations_end(self, tmp_path, monkeypatch):
-            fake_dns_sd(tmp_path, monkeypatch)
-
-            result = main(["preview", "MacPro7,1"])
-
-            assert result == 0
 
     @pytest.mark.macos
     class TestDump:
@@ -79,10 +72,3 @@ class TestMain:
             assert re.match(r"\d+ model identifiers: \d+ placed under 1 sidebar icons and 1 icons in ", capsys.readouterr().out)
             assert "SidebarXserve" in json.loads((out / "index.json").read_text())["sidebars"]
 
-
-def fake_dns_sd(tmp_path, monkeypatch):
-    script = tmp_path / "bin" / "dns-sd"
-    script.parent.mkdir()
-    script.write_text("#!/bin/sh\nexit 0\n")
-    script.chmod(script.stat().st_mode | stat.S_IXUSR)
-    monkeypatch.setenv("PATH", f"{script.parent}{os.pathsep}{os.environ['PATH']}")

@@ -7,7 +7,7 @@ import time
 
 import pytest
 
-from device_icons.preview import preview, registrations, start, stop
+from device_icons.preview import registrations, start, stop
 
 
 class TestRegistrations:
@@ -73,8 +73,11 @@ class TestPreview:
     def test_returns_once_a_registration_ends(self, tmp_path, monkeypatch):
         script = fake_dns_sd(tmp_path, monkeypatch).parent / "bin" / "dns-sd"
         script.write_text("#!/bin/sh\nexit 1\n")
+        process = subprocess.Popen([sys.executable, "-c", "from device_icons.preview import preview; preview(['MacPro7,1'])"])
 
-        preview(["MacPro7,1"])
+        result = process.wait(timeout=5)
+
+        assert result == 0
 
 
 def fake_dns_sd(tmp_path, monkeypatch):
