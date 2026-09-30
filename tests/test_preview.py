@@ -1,10 +1,13 @@
 import os
+import signal
 import stat
+import subprocess
+import sys
 import time
 
 import pytest
 
-from device_icons.preview import registrations, start, stop
+from device_icons.preview import preview, registrations, start, stop
 
 
 class TestRegistrations:
@@ -50,14 +53,35 @@ class TestStartAndStop:
 
         assert running == [None, None]
         assert all(process.returncode is not None for process in processes)
-        assert sorted(log.read_text().splitlines()) == sorted(" ".join(command[1:]) for command in commands)
+        assert sorted(line.split(" ", 1)[1] for line in log.read_text().splitlines()) == sorted(" ".join(command[1:]) for command in commands)
+
+
+class TestPreview:
+    @pytest.mark.parametrize("signal_number", [signal.SIGINT, signal.SIGTERM], ids=["SIGINT", "SIGTERM"])
+    def test_unregisters_when_signalled(self, tmp_path, monkeypatch, signal_number):
+        log = fake_dns_sd(tmp_path, monkeypatch)
+        process = subprocess.Popen([sys.executable, "-c", "from device_icons.preview import preview; preview(['MacPro7,1'])"])
+        logged(log, lines=2)
+        registrations_pids = [int(line.split()[0]) for line in log.read_text().splitlines()]
+
+        process.send_signal(signal_number)
+        result = process.wait(timeout=5)
+
+        assert result == 0
+        assert all(not alive(pid) for pid in registrations_pids)
+
+    def test_returns_once_a_registration_ends(self, tmp_path, monkeypatch):
+        script = fake_dns_sd(tmp_path, monkeypatch).parent / "bin" / "dns-sd"
+        script.write_text("#!/bin/sh\nexit 1\n")
+
+        preview(["MacPro7,1"])
 
 
 def fake_dns_sd(tmp_path, monkeypatch):
     log = tmp_path / "dns-sd.log"
     script = tmp_path / "bin" / "dns-sd"
     script.parent.mkdir()
-    script.write_text(f'#!/bin/sh\nprintf "%s\\n" "$*" >> "{log}"\nexec sleep 30\n')
+    script.write_text(f'#!/bin/sh\nprintf "%s %s\\n" "$$" "$*" >> "{log}"\nexec sleep 30\n')
     script.chmod(script.stat().st_mode | stat.S_IXUSR)
     monkeypatch.setenv("PATH", f"{script.parent}{os.pathsep}{os.environ['PATH']}")
     return log
@@ -70,3 +94,11 @@ def logged(log, lines: int) -> None:
             return
         time.sleep(0.01)
     raise TimeoutError(f"{lines} lines not logged within 5 s")
+
+
+def alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    return True

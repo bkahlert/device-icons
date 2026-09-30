@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import signal
 import subprocess
 import time
 
@@ -47,8 +48,9 @@ def stop(processes: list[subprocess.Popen]) -> None:
 
 
 def preview(model_identifiers: list[str], name: str | None = None) -> None:
-    """Register the proxies for the model identifiers and keep them until Ctrl-C or until one of them ends."""
+    """Register the proxies for the model identifiers and keep them until Ctrl-C, SIGTERM, or one of them ending."""
     processes = start(registrations(model_identifiers, name))
+    previous = signal.signal(signal.SIGTERM, _interrupt)
     try:
         while all(process.poll() is None for process in processes):
             time.sleep(0.5)
@@ -56,3 +58,8 @@ def preview(model_identifiers: list[str], name: str | None = None) -> None:
         pass
     finally:
         stop(processes)
+        signal.signal(signal.SIGTERM, previous)
+
+
+def _interrupt(signal_number: int, frame: object) -> None:
+    raise KeyboardInterrupt

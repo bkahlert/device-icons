@@ -73,7 +73,8 @@ uv run device-icons preview --name "Rack" MacPro7,1@ECOLOR=226,226,224
 `preview` registers, for each model identifier, two proxy records from the Mac itself: an `_smb._tcp` service and a
 `_device-info._tcp` service carrying `model=<identifier>`, both under the same service instance name, which defaults to the
 identifier. Open Network in Finder (Go, Network, or ⇧⌘K); the device appears within a few seconds, drawn with the icon
-the identifier produces. `preview` blocks until Ctrl-C, then unregisters.
+the identifier produces. `preview` blocks until Ctrl-C, a termination signal, or one of the registrations ending, then
+unregisters.
 
 The sidebar icon cannot be previewed this way. Finder shows it only under Locations, for a server it has mounted, and
 the previewed host does not exist.
