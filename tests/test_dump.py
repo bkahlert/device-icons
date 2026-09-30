@@ -72,13 +72,13 @@ class TestLayout:
         assert result.sidebars["SidebarMacPro"]["icons"]["com.apple.xserve"]["model_identifiers"] == []
 
     def test_lists_a_row_per_model_identifier(self):
-        placements = {"com.apple.xserve-xeon": Placement("com.apple.xserve-xeon", XSERVE, SIDEBAR_MACPRO, kind="Xserve")}
+        placements = {"com.apple.xserve-xeon": Placement("com.apple.xserve-xeon", XSERVE, SIDEBAR_MACPRO, kind="Mac")}
 
         result = layout(placements, {"Xserve3,1": "com.apple.xserve-xeon", "RackMac": "com.apple.xserve-xeon", "J120AP": None})
 
         assert result.rows == [
-            Row("RackMac", "com.apple.xserve-xeon", "Xserve", Path("icons/com.apple.xserve.png"), Path("sidebar/SidebarMacPro.png")),
-            Row("Xserve3,1", "com.apple.xserve-xeon", "Xserve", Path("icons/com.apple.xserve.png"), Path("sidebar/SidebarMacPro.png")),
+            Row("RackMac", "com.apple.xserve-xeon", "Mac", Path("icons/com.apple.xserve.png"), Path("sidebar/SidebarMacPro.png")),
+            Row("Xserve3,1", "com.apple.xserve-xeon", "Mac", Path("icons/com.apple.xserve.png"), Path("sidebar/SidebarMacPro.png")),
         ]
 
     class TestDropped:
@@ -128,22 +128,15 @@ class TestDeclared:
 
 class TestMarkdown:
     def test_renders_a_table_with_a_row_per_model_identifier(self):
-        rows = [Row("Xserve3,1", "com.apple.xserve-xeon", "Xserve", Path("icons/com.apple.xserve.png"), Path("sidebar/SidebarXserve.png"))]
+        rows = [Row("Xserve3,1", "com.apple.xserve-xeon", "Mac", Path("icons/com.apple.xserve.png"), Path("sidebar/SidebarXserve.png"))]
 
         result = markdown(rows)
 
         assert result.splitlines()[-3:] == [
             "| Model identifier | Type identifier | Kind | Icon | Sidebar icon |",
             "| --- | --- | --- | :-: | :-: |",
-            '| `Xserve3,1` | `com.apple.xserve-xeon` | Xserve | <img src="icons/com.apple.xserve.png" alt="com.apple.xserve" width="128"> | <img src="sidebar/SidebarXserve.png" alt="SidebarXserve" width="32"> |',
+            '| `Xserve3,1` | `com.apple.xserve-xeon` | Mac | <img src="icons/com.apple.xserve.png" alt="com.apple.xserve" width="128"> | <img src="sidebar/SidebarXserve.png" alt="SidebarXserve" width="32"> |',
         ]
-
-    def test_leaves_a_missing_kind_empty(self):
-        rows = [Row("iPhone18,1", "com.apple.iphone-17-pro-1", None, Path("icons/com.apple.iphone-17-pro-1.png"), Path("sidebar/SidebarIPhone.png"))]
-
-        result = markdown(rows)
-
-        assert "| `com.apple.iphone-17-pro-1` |  | <img" in result
 
 
 class TestClear:
@@ -204,7 +197,7 @@ class TestWrite:
             files={Path("icons/com.apple.xserve.png"): source, Path("sidebar/SidebarMacPro.png"): sidebar},
             links={Path("by-sidebar/SidebarMacPro/com.apple.xserve.png"): Path("icons/com.apple.xserve.png")},
             folders={Path("by-sidebar/SidebarMacPro"): Path("sidebar/SidebarMacPro.png")},
-            rows=[Row("Xserve3,1", "com.apple.xserve-xeon", "Xserve", Path("icons/com.apple.xserve.png"), Path("sidebar/SidebarMacPro.png"))],
+            rows=[Row("Xserve3,1", "com.apple.xserve-xeon", "Mac", Path("icons/com.apple.xserve.png"), Path("sidebar/SidebarMacPro.png"))],
         )
 
         write(out, laid)
@@ -241,7 +234,7 @@ class TestDump:
 
         dump(out, ["com.apple.xserve-xeon"])
 
-        assert "| `Xserve3,1` | `com.apple.xserve-xeon` | Xserve | <img" in (out / "index.md").read_text()
+        assert "| `Xserve3,1` | `com.apple.xserve-xeon` | Mac | <img" in (out / "index.md").read_text()
 
     def test_refuses_a_type_that_is_not_declared(self, tmp_path):
         with pytest.raises(SystemExit, match="com.apple.no-such-device"):

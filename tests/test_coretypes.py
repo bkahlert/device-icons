@@ -1,7 +1,7 @@
 import plistlib
 from pathlib import Path
 
-from device_icons.coretypes import TypeDeclaration, bundles, inherit, read, resource
+from device_icons.coretypes import ancestors, TypeDeclaration, bundles, inherit, read, resource
 
 
 class TestRead:
@@ -18,16 +18,8 @@ class TestRead:
                 icon_file="com.apple.macpro-2019.icns",
                 sidebar_icon_file="SidebarMacPro.icns",
                 symbol_name="macpro.gen3",
-                kind="Mac Pro",
             )
         }
-
-    def test_reads_the_description_as_kind(self, tmp_path):
-        root = bundle(tmp_path / "b", [declaration("com.apple.time-capsule", kind="Time Capsule")])
-
-        result = read(root)
-
-        assert result["com.apple.time-capsule"].kind == "Time Capsule"
 
     def test_reads_a_single_string_tag_as_one_model_identifier(self, tmp_path):
         root = bundle(tmp_path / "b", [declaration("com.apple.mac", model_identifiers="Mac", conforms_to="public.device")])
@@ -97,15 +89,6 @@ class TestInherit:
 
         assert result.icon_file == "p.icns"
 
-    def test_takes_the_kind_of_the_nearest_parent(self):
-        child = TypeDeclaration("c", conforms_to=("p",), icon_file="c.icns", sidebar_icon_file="Sc.icns")
-        parent = TypeDeclaration("p", conforms_to=("g",))
-        grandparent = TypeDeclaration("g", kind="Mac")
-
-        result = inherit(child, {"c": child, "p": parent, "g": grandparent})
-
-        assert result.kind == "Mac"
-
     def test_takes_the_sidebar_icon_file_from_a_farther_parent_than_the_icon_file(self):
         child = TypeDeclaration("c", conforms_to=("p",))
         parent = TypeDeclaration("p", conforms_to=("g",), icon_file="p.icns")
@@ -140,6 +123,24 @@ class TestInherit:
         result = inherit(a, {"a": a, "b": b})
 
         assert result == a
+
+
+class TestAncestors:
+    def test_lists_every_type_conformed_to_transitively(self):
+        child = TypeDeclaration("com.apple.ipod-touch", conforms_to=("com.apple.ipod",))
+        parent = TypeDeclaration("com.apple.ipod", conforms_to=("com.apple.ios-device", "public.device"))
+
+        result = ancestors(child, {"com.apple.ipod-touch": child, "com.apple.ipod": parent})
+
+        assert result == {"com.apple.ipod", "com.apple.ios-device", "public.device"}
+
+    def test_terminates_on_a_cycle(self):
+        a = TypeDeclaration("a", conforms_to=("b",))
+        b = TypeDeclaration("b", conforms_to=("a",))
+
+        result = ancestors(a, {"a": a, "b": b})
+
+        assert result == {"a", "b"}
 
 
 class TestBundles:
@@ -185,7 +186,6 @@ MACPRO_2019 = {
         "_UTTypeTemplateIconFile": "SidebarMacPro.icns",
         "UTTypeSymbolName": "macpro.gen3",
     },
-    "UTTypeDescription": "Mac Pro",
 }
 
 
@@ -197,8 +197,6 @@ def declaration(type_identifier: str, **fields) -> dict:
         entry["UTTypeConformsTo"] = fields["conforms_to"]
     if "icon_file" in fields:
         entry["UTTypeIcons"] = {"UTTypeIconFile": fields["icon_file"]}
-    if "kind" in fields:
-        entry["UTTypeDescription"] = fields["kind"]
     return entry
 
 

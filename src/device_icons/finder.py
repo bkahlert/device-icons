@@ -1,4 +1,5 @@
-"""Finder: folder icons, set through AppKit as pasting an image into Get Info does, and opening a folder or view."""
+"""Finder: the Kind it shows a device as, folder icons set through AppKit as pasting into Get Info does, and opening a
+folder or view."""
 
 from __future__ import annotations
 
@@ -7,6 +8,16 @@ from pathlib import Path
 
 # What Go > Network (⇧⌘K) opens; /Network is gone from macOS.
 NETWORK_VIEW = Path("/System/Library/CoreServices/Finder.app/Contents/Applications/Network.app")
+
+# Observed in the Network view: a device conforming to one of these shows that Kind; any other model, an Apple TV or a
+# Watch too, shows as Mac, and a host without a model as PC.
+KINDS = (
+    ("com.apple.iphone", "iPhone"),
+    ("com.apple.ipad", "iPad"),
+    ("com.apple.ipod", "iPod"),
+    ("com.apple.airport", "AirPort Extreme"),
+    ("com.apple.time-capsule", "Time Capsule"),
+)
 
 # JavaScript for Automation. Sidebar icons are black template images, so each is tinted grey first to show in the
 # dark and the light appearance alike.
@@ -38,6 +49,11 @@ function run(argv) {
   }).join('\n');
 }
 """
+
+
+def kind(type_identifiers: set[str]) -> str:
+    """Return the Kind Finder shows a device as whose type is, or conforms to, one of the type identifiers; Mac if none is in KINDS."""
+    return next((shown for type_identifier, shown in KINDS if type_identifier in type_identifiers), "Mac")
 
 
 def set_folder_icons(icons: dict[Path, Path]) -> list[Path]:

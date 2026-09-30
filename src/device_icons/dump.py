@@ -24,12 +24,12 @@ SIDEBAR_ICON_WIDTH = 32
 
 @dataclass(frozen=True)
 class Placement:
-    """A type's images as found in the iconsets, None where the type has no icon or no sidebar icon, and its kind."""
+    """A type's images as found in the iconsets, None where the type has no icon or no sidebar icon, and its Kind in Finder."""
 
     type_identifier: str
     icon: Path | None
     sidebar_icon: Path | None
-    kind: str | None = None
+    kind: str = "Mac"
 
 
 @dataclass(frozen=True)
@@ -38,7 +38,7 @@ class Row:
 
     model_identifier: str
     type_identifier: str
-    kind: str | None
+    kind: str
     icon: Path
     sidebar_icon: Path
 
@@ -122,7 +122,7 @@ def markdown(rows: list[Row]) -> str:
     for row in rows:
         icon = f'<img src="{row.icon.as_posix()}" alt="{row.icon.stem}" width="{ICON_WIDTH}">'
         sidebar_icon = f'<img src="{row.sidebar_icon.as_posix()}" alt="{row.sidebar_icon.stem}" width="{SIDEBAR_ICON_WIDTH}">'
-        lines.append(f"| `{row.model_identifier}` | `{row.type_identifier}` | {row.kind or ''} | {icon} | {sidebar_icon} |")
+        lines.append(f"| `{row.model_identifier}` | `{row.type_identifier}` | {row.kind} | {icon} | {sidebar_icon} |")
     return "\n".join(lines) + "\n"
 
 
@@ -176,8 +176,9 @@ def dump(out: Path, type_identifiers: list[str] | None = None) -> str:
         resolved = {name: winner for name, winner in resolved.items() if winner in chosen}
     else:
         chosen = {winner for winner in resolved.values() if winner is not None}
+    kinds = {name: finder.kind({name, *coretypes.ancestors(declarations[name], declarations)}) for name in chosen}
     with tempfile.TemporaryDirectory() as tmp:
-        placements = _placements({name: coretypes.inherit(declarations[name], declarations) for name in chosen}, search, Path(tmp))
+        placements = _placements({name: coretypes.inherit(declarations[name], declarations) for name in chosen}, kinds, search, Path(tmp))
         if type_identifiers:
             lacking = {"no icon": [], "no sidebar icon": []}
             for name in type_identifiers:
@@ -198,7 +199,7 @@ def dump(out: Path, type_identifiers: list[str] | None = None) -> str:
     return f"{len(resolved)} model identifiers: {placed} placed under {len(laid.sidebars)} sidebar icons and {icons} icons in {out}; {dropped}"
 
 
-def _placements(declarations: dict[str, TypeDeclaration], search: list[Path], work: Path) -> dict[str, Placement]:
+def _placements(declarations: dict[str, TypeDeclaration], kinds: dict[str, str], search: list[Path], work: Path) -> dict[str, Placement]:
     needed = {name for declaration in declarations.values() for name in (declaration.icon_file, declaration.sidebar_icon_file) if name}
     found = {name: path for name in needed if (path := coretypes.resource(search, name))}
     with ThreadPoolExecutor() as pool:
@@ -208,5 +209,5 @@ def _placements(declarations: dict[str, TypeDeclaration], search: list[Path], wo
         own = iconsets.get(declaration.icon_file)
         icon = icns.largest(own) if own else None
         sidebar_icon = icns.sidebar_icon(own, iconsets.get(declaration.sidebar_icon_file))
-        placements[type_identifier] = Placement(type_identifier, icon, sidebar_icon, declaration.kind)
+        placements[type_identifier] = Placement(type_identifier, icon, sidebar_icon, kinds[type_identifier])
     return placements
