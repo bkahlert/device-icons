@@ -18,10 +18,7 @@ from device_icons.coretypes import TypeDeclaration
 DROPPED = ("no type", "no icon", "no sidebar icon")
 OURS = ("index.json", "README.md", "icons", "sidebar", "by-sidebar")
 # The first line of a dump's README.md; a README.md without it belongs to someone else and stays.
-LEAD = (
-    "The icon Finder draws for each model identifier, dumped from `CoreTypes.bundle` by"
-    " [device-icons](https://github.com/bkahlert/device-icons)."
-)
+LEAD = "The icon Finder draws for each model identifier, dumped from `CoreTypes.bundle` by [device-icons](https://github.com/bkahlert/device-icons)."
 # Rendered widths in README.md: the icon is 1024 px, the sidebar icon 64 px for a 32 pt slot.
 ICON_WIDTH = 128
 SIDEBAR_ICON_WIDTH = 32
@@ -84,12 +81,7 @@ def layout(placements: dict[str, Placement], resolved: dict[str, str | None]) ->
         group = laid.sidebars.setdefault(sidebar, {"sidebar_icon": sidebar_target.as_posix(), "icons": {}})
         entry = group["icons"].setdefault(icon, {"icon": icon_target.as_posix(), "type_identifiers": [], "model_identifiers": []})
         entry["type_identifiers"].append(placement.type_identifier)
-    entries = {
-        type_identifier: entry
-        for group in laid.sidebars.values()
-        for entry in group["icons"].values()
-        for type_identifier in entry["type_identifiers"]
-    }
+    entries = {type_identifier: entry for group in laid.sidebars.values() for entry in group["icons"].values() for type_identifier in entry["type_identifiers"]}
     for model_identifier, type_identifier in sorted(resolved.items()):
         placement = placements.get(type_identifier) if type_identifier is not None else None
         if placement is None:

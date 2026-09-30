@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from device_icons.coretypes import BUNDLE
 from device_icons.dump import DROPPED, LEAD, Layout, Placement, Row, clear, declared, dump, layout, markdown, write
+
 
 class TestLayout:
     def test_groups_the_icons_under_their_sidebar_icon(self):
@@ -157,12 +157,17 @@ class TestMarkdown:
             '| `Xserve3,1` | `com.apple.xserve-xeon` | Mac | <img src="icons/com.apple.xserve.png" alt="com.apple.xserve" width="128"> | <img src="sidebar/SidebarXserve.png" alt="SidebarXserve" width="32"> |',
         ]
 
-
     class TestOnHorizontal:
         def test_lays_out_a_column_per_model_identifier(self):
             rows = [
                 Row("Xserve3,1", "com.apple.xserve-xeon", "Mac", Path("icons/com.apple.xserve.png"), Path("sidebar/SidebarXserve.png")),
-                Row("MacPro7,1@ECOLOR=226,226,224", "com.apple.macpro-2019-rackmount", "Mac", Path("icons/com.apple.macpro-2019-rackmount.png"), Path("sidebar/com.apple.macpro-2019-rackmount.png")),
+                Row(
+                    "MacPro7,1@ECOLOR=226,226,224",
+                    "com.apple.macpro-2019-rackmount",
+                    "Mac",
+                    Path("icons/com.apple.macpro-2019-rackmount.png"),
+                    Path("sidebar/com.apple.macpro-2019-rackmount.png"),
+                ),
             ]
 
             result = markdown(rows, horizontal=True)

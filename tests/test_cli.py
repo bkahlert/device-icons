@@ -178,7 +178,6 @@ class TestMain:
                 assert "| Type identifier | `com.apple.xserve-xeon` |" in (out / "README.md").read_text()
 
 
-
 def preview_as_on_macos(*arguments: str) -> int:
     script = f"import sys; sys.platform = 'darwin'; from device_icons.cli import main; sys.exit(main(['preview', *{list(arguments)!r}]))"
-    return subprocess.run([sys.executable, "-c", script], timeout=5).returncode
+    return subprocess.run([sys.executable, "-c", script], timeout=5, check=False).returncode

@@ -1,7 +1,7 @@
 import plistlib
 from pathlib import Path
 
-from device_icons.coretypes import ancestors, TypeDeclaration, bundles, inherit, read, resource
+from device_icons.coretypes import TypeDeclaration, ancestors, bundles, inherit, read, resource
 
 
 class TestRead:

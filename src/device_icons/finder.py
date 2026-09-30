@@ -74,4 +74,4 @@ def show(path: Path) -> None:
 
     A failure is reported by open on stderr and otherwise ignored.
     """
-    subprocess.run(["open", str(path)])
+    subprocess.run(["open", str(path)], check=False)
