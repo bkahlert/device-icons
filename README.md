@@ -177,7 +177,8 @@ the previewed host does not exist.
 - Model identifiers are not unique: about half are claimed by several type declarations, mostly colour variants of one
   device. LaunchServices settles which type wins, and Finder asks it the same way `dump` does: the preferred type
   identifier for the tag, conforming to `public.device`. A model identifier nobody claims resolves to a dynamic `dyn.*`
-  type, and Finder shows a question mark.
+  type, and Finder shows a question mark. So does a display's, such as `AppleDisplay2,1`: its type conforms to
+  `public.display`, not `public.device`, which is why the displays are the "no type" rows of a full dump.
 - A type's icon is its icon file; a type without one inherits the nearest along `UTTypeConformsTo`. The sidebar icon
   comes from one of two places: the `Sidebar….icns` a type names as `_UTTypeTemplateIconFile`, or the `sbtp` chunk
   newer icon files embed, which `iconutil` unpacks as `template_…` images. `dump` prefers the embedded one; which one
