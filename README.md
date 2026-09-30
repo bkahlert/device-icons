@@ -1,38 +1,27 @@
 # device-icons
 
 Finder draws a network device with the icon of the Apple device its `_device-info._tcp` record names: `model=MacPro7,1`
-gives the 2019 Mac Pro tower. This tool dumps every icon macOS knows for such a model identifier, grouped so one can be
-picked by eye in Finder, and previews a model identifier in Finder's Network view without owning the device.
+gives the 2019 Mac Pro tower. Two commands work with that:
+
+- [`dump`](#dump) writes every icon macOS knows for such a model identifier, grouped so one can be picked by eye in
+  Finder.
+- [`preview`](#preview) shows a model identifier in Finder's Network view without owning the device.
 
 macOS only: the icons live in `CoreTypes.bundle`, and `iconutil`, `osascript`, `open`, and `dns-sd` do the work no
 Python module does. Needs [uv](https://docs.astral.sh/uv/); the runtime is the standard library.
 
 ## Dump
 
+A device that announces itself over Bonjour, a Raspberry Pi say, can wear any icon macOS has for an Apple device. To
+pick one, dump them all:
+
 ```bash
-uv run device-icons dump                                        # into out/
-uv run device-icons dump ~/Desktop/device-icons
-uv run device-icons dump --type com.apple.macpro-2019 --type com.apple.xserve-xeon docs/icons
-uv run device-icons dump --no-open
+uv run device-icons dump
 ```
 
-`dump` reads every model identifier declared in `CoreTypes.bundle`, asks LaunchServices which type each resolves to, takes
-that type's icon and sidebar icon, and writes:
-
-| Path                             | Content                                                                             |
-| -------------------------------- | ----------------------------------------------------------------------------------- |
-| `icons/<icon file>.png`          | the largest image of each icon file, written once                                   |
-| `sidebar/<sidebar>.png`          | each 64 px sidebar icon, written once, named after its `Sidebar….icns` or, when embedded, after its icon file |
-| `by-sidebar/<sidebar>/`          | one folder per sidebar icon, wearing it as its folder icon                          |
-| `by-sidebar/<sidebar>/<icon>.png` | a link to `icons/<icon>.png` for every icon that comes with that sidebar icon      |
-| `index.json`                     | `sidebars`: sidebar icon, then icon, then types and model identifiers; `dropped`: model identifiers left out, by reason |
-
-`--type` restricts the dump to the given type identifiers and the model identifiers that resolve to them; the layout stays
-the same. A type identifier that is not declared, or whose type has no icon or no sidebar icon, ends `dump` with a message
-naming it before anything is written.
-
-Open `out/by-sidebar` in Finder: each folder shows a sidebar icon, inside it the realistic icons that go with it. Having
-chosen an icon, its model identifiers are in `index.json`:
+The dump lands in `out/`, which opens in Finder. Its `by-sidebar/` holds one folder per sidebar icon, each wearing that
+icon; inside are the icons that come with it. Having picked one, `index.json` lists the model identifiers that produce
+it, and any of them, announced as `model=…`, makes Finder draw it:
 
 ```json
 {
@@ -56,28 +45,71 @@ chosen an icon, its model identifiers are in `index.json`:
 }
 ```
 
-The output directory is emptied first, but only when it is missing, empty, or holds an earlier dump. Once written, it
-opens in Finder; `--no-open` skips that.
+Another directory:
+
+```bash
+uv run device-icons dump ~/Desktop/device-icons
+```
+
+It is emptied first, but only when it is missing, empty, or holds an earlier dump.
+
+Only some types, for a project's docs say, and without Finder:
+
+```bash
+uv run device-icons dump --no-open --type com.apple.macpro-2019 --type com.apple.xserve-xeon docs/icons
+```
+
+`--type` restricts the dump to the given type identifiers and the model identifiers that resolve to them; the layout
+stays the same. A type identifier that is not declared, or whose type has no icon or no sidebar icon, ends `dump` with
+a message naming it before anything is written. `--no-open` skips opening the output directory in Finder.
 
 From another project, without a checkout:
 
 ```bash
-uvx --from git+https://github.com/bkahlert/device-icons device-icons dump --no-open --type com.apple.macpro-2019 out/
+uvx --from git+https://github.com/bkahlert/device-icons device-icons dump --no-open --type com.apple.macpro-2019 docs/icons
 ```
+
+To do all this, `dump` reads every model identifier declared in `CoreTypes.bundle`, asks LaunchServices which type each
+resolves to, takes that type's icon and sidebar icon, and writes:
+
+| Path                             | Content                                                                             |
+| -------------------------------- | ----------------------------------------------------------------------------------- |
+| `icons/<icon file>.png`          | the largest image of each icon file, written once                                   |
+| `sidebar/<sidebar>.png`          | each 64 px sidebar icon, written once, named after its `Sidebar….icns` or, when embedded, after its icon file |
+| `by-sidebar/<sidebar>/`          | one folder per sidebar icon, wearing it as its folder icon                          |
+| `by-sidebar/<sidebar>/<icon>.png` | a link to `icons/<icon>.png` for every icon that comes with that sidebar icon      |
+| `index.json`                     | `sidebars`: sidebar icon, then icon, then types and model identifiers; `dropped`: model identifiers left out, by reason |
 
 ## Preview
 
+To see the icon Finder really draws for a model identifier, without the device:
+
 ```bash
 uv run device-icons preview MacPro7,1
+```
+
+Finder's Network view opens, and within a few seconds a device named `MacPro7,1` appears there, drawn with the icon the
+identifier produces. `preview` keeps it there until Ctrl-C, a termination signal, or one of its registrations ending,
+then unregisters.
+
+Several at once, to compare:
+
+```bash
 uv run device-icons preview MacPro7,1 Xserve3,1 "Mac14,8@ECOLOR=1"
+```
+
+Under the name the real device will have:
+
+```bash
 uv run device-icons preview --name "Rack" MacPro7,1@ECOLOR=226,226,224
 ```
 
-`preview` registers, for each model identifier, two proxy records from the Mac itself: an `_smb._tcp` service and a
-`_device-info._tcp` service carrying `model=<identifier>`, both under the same service instance name, which defaults to the
-identifier. Since Finder pairs the two records by that name, `--name` takes exactly one model identifier. Finder's
-Network view opens, unless `--no-open`; the device appears there within a few seconds, drawn with the icon the identifier
-produces. `preview` blocks until Ctrl-C, a termination signal, or one of the registrations ending, then unregisters.
+`--name` takes exactly one model identifier, since Finder pairs a device's records by that name. `--no-open` leaves
+Finder alone; the view is Go > Network, or ⇧⌘K.
+
+Behind this, `preview` registers for each model identifier two proxy records from the Mac itself: an `_smb._tcp` service
+and a `_device-info._tcp` service carrying `model=<identifier>`, both under the same service instance name, which
+defaults to the identifier.
 
 The sidebar icon cannot be previewed this way. Finder shows it only under Locations, for a server it has mounted, and
 the previewed host does not exist.
@@ -130,9 +162,21 @@ output use them as written here, or the short form given, as snake_case where th
 
 ## Development
 
+Install the dependencies:
+
 ```bash
 uv sync
+```
+
+Run the tests:
+
+```bash
 uv run pytest
+```
+
+Run the tool from the checkout:
+
+```bash
 uv run device-icons --help
 ```
 
