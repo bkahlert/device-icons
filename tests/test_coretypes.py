@@ -18,8 +18,16 @@ class TestRead:
                 icon_file="com.apple.macpro-2019.icns",
                 sidebar_icon_file="SidebarMacPro.icns",
                 symbol_name="macpro.gen3",
+                kind="Mac Pro",
             )
         }
+
+    def test_reads_the_description_as_kind(self, tmp_path):
+        root = bundle(tmp_path / "b", [declaration("com.apple.time-capsule", kind="Time Capsule")])
+
+        result = read(root)
+
+        assert result["com.apple.time-capsule"].kind == "Time Capsule"
 
     def test_reads_a_single_string_tag_as_one_model_identifier(self, tmp_path):
         root = bundle(tmp_path / "b", [declaration("com.apple.mac", model_identifiers="Mac", conforms_to="public.device")])
@@ -88,6 +96,15 @@ class TestInherit:
         result = inherit(child, {"c": child, "p": parent, "g": grandparent})
 
         assert result.icon_file == "p.icns"
+
+    def test_takes_the_kind_of_the_nearest_parent(self):
+        child = TypeDeclaration("c", conforms_to=("p",), icon_file="c.icns", sidebar_icon_file="Sc.icns")
+        parent = TypeDeclaration("p", conforms_to=("g",))
+        grandparent = TypeDeclaration("g", kind="Mac")
+
+        result = inherit(child, {"c": child, "p": parent, "g": grandparent})
+
+        assert result.kind == "Mac"
 
     def test_takes_the_sidebar_icon_file_from_a_farther_parent_than_the_icon_file(self):
         child = TypeDeclaration("c", conforms_to=("p",))
@@ -168,6 +185,7 @@ MACPRO_2019 = {
         "_UTTypeTemplateIconFile": "SidebarMacPro.icns",
         "UTTypeSymbolName": "macpro.gen3",
     },
+    "UTTypeDescription": "Mac Pro",
 }
 
 
@@ -179,6 +197,8 @@ def declaration(type_identifier: str, **fields) -> dict:
         entry["UTTypeConformsTo"] = fields["conforms_to"]
     if "icon_file" in fields:
         entry["UTTypeIcons"] = {"UTTypeIconFile": fields["icon_file"]}
+    if "kind" in fields:
+        entry["UTTypeDescription"] = fields["kind"]
     return entry
 
 

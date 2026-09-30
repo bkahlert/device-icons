@@ -15,16 +15,31 @@ from device_icons import coretypes, finder, icns, launchservices
 from device_icons.coretypes import TypeDeclaration
 
 DROPPED = ("no type", "no icon", "no sidebar icon")
-OURS = ("index.json", "icons", "sidebar", "by-sidebar")
+OURS = ("index.json", "index.md", "icons", "sidebar", "by-sidebar")
+# Rendered widths in index.md: the icon is 1024 px, the sidebar icon 64 px for a 32 pt slot.
+ICON_WIDTH = 128
+SIDEBAR_ICON_WIDTH = 32
 
 
 @dataclass(frozen=True)
 class Placement:
-    """A type's images as found in the iconsets; None where the type has no icon or no sidebar icon."""
+    """A type's images as found in the iconsets, None where the type has no icon or no sidebar icon, and its kind."""
 
     type_identifier: str
     icon: Path | None
     sidebar_icon: Path | None
+    kind: str | None = None
+
+
+@dataclass(frozen=True)
+class Row:
+    """One model identifier's row of index.md; the paths are relative to the output directory."""
+
+    model_identifier: str
+    type_identifier: str
+    kind: str | None
+    icon: Path
+    sidebar_icon: Path
 
 
 @dataclass
@@ -36,6 +51,7 @@ class Layout:
     files: dict[Path, Path] = field(default_factory=dict)
     links: dict[Path, Path] = field(default_factory=dict)
     folders: dict[Path, Path] = field(default_factory=dict)
+    rows: list[Row] = field(default_factory=list)
 
 
 def layout(placements: dict[str, Placement], resolved: dict[str, str | None]) -> Layout:
@@ -43,9 +59,10 @@ def layout(placements: dict[str, Placement], resolved: dict[str, str | None]) ->
 
     resolved maps each model identifier to its preferred type identifier, or None for one no type declares.
     A model identifier whose type is missing, or has no icon, or has no sidebar icon, is dropped under that reason.
-    A type is placed even if no model identifier resolves to it.
+    A type is placed even if no model identifier resolves to it; rows has only the placed model identifiers, sorted.
     """
     laid = Layout()
+    targets: dict[str, tuple[Path, Path]] = {}
     for placement in sorted(placements.values(), key=lambda placement: placement.type_identifier):
         if placement.icon is None or placement.sidebar_icon is None:
             continue
@@ -56,6 +73,7 @@ def layout(placements: dict[str, Placement], resolved: dict[str, str | None]) ->
         laid.files.setdefault(sidebar_target, placement.sidebar_icon)
         laid.links.setdefault(folder / f"{icon}.png", icon_target)
         laid.folders.setdefault(folder, sidebar_target)
+        targets[placement.type_identifier] = (icon_target, sidebar_target)
         group = laid.sidebars.setdefault(sidebar, {"sidebar_icon": sidebar_target.as_posix(), "icons": {}})
         entry = group["icons"].setdefault(icon, {"icon": icon_target.as_posix(), "type_identifiers": [], "model_identifiers": []})
         entry["type_identifiers"].append(placement.type_identifier)
@@ -75,10 +93,27 @@ def layout(placements: dict[str, Placement], resolved: dict[str, str | None]) ->
             laid.dropped["no sidebar icon"].append(model_identifier)
         else:
             entries[type_identifier]["model_identifiers"].append(model_identifier)
+            laid.rows.append(Row(model_identifier, type_identifier, placement.kind, *targets[type_identifier]))
     for group in laid.sidebars.values():
         group["icons"] = dict(sorted(group["icons"].items()))
     laid.sidebars = dict(sorted(laid.sidebars.items()))
     return laid
+
+
+def markdown(rows: list[Row]) -> str:
+    """Return index.md: a lead sentence and a table with a row per model identifier."""
+    lines = [
+        "The icon Finder draws for each model identifier, dumped from `CoreTypes.bundle` by"
+        " [device-icons](https://github.com/bkahlert/device-icons).",
+        "",
+        "| Model identifier | Type identifier | Kind | Icon | Sidebar icon |",
+        "| --- | --- | --- | :-: | :-: |",
+    ]
+    for row in rows:
+        icon = f'<img src="{row.icon.as_posix()}" alt="{row.icon.stem}" width="{ICON_WIDTH}">'
+        sidebar_icon = f'<img src="{row.sidebar_icon.as_posix()}" alt="{row.sidebar_icon.stem}" width="{SIDEBAR_ICON_WIDTH}">'
+        lines.append(f"| `{row.model_identifier}` | `{row.type_identifier}` | {row.kind or ''} | {icon} | {sidebar_icon} |")
+    return "\n".join(lines) + "\n"
 
 
 def clear(out: Path) -> None:
@@ -102,7 +137,7 @@ def clear(out: Path) -> None:
 
 
 def write(out: Path, laid: Layout) -> None:
-    """Clear the output directory, then write the layout's files, relative links, and index.json."""
+    """Clear the output directory, then write the layout's files, relative links, index.json, and index.md."""
     clear(out)
     for target, source in laid.files.items():
         (out / target).parent.mkdir(parents=True, exist_ok=True)
@@ -112,6 +147,7 @@ def write(out: Path, laid: Layout) -> None:
         os.symlink(os.path.relpath(out / target, (out / link).parent), out / link)
     index = {"sidebars": laid.sidebars, "dropped": laid.dropped}
     (out / "index.json").write_text(json.dumps(index, indent=2) + "\n")
+    (out / "index.md").write_text(markdown(laid.rows))
 
 
 def dump(out: Path, type_identifiers: list[str] | None = None) -> str:
@@ -163,5 +199,5 @@ def _placements(declarations: dict[str, TypeDeclaration], search: list[Path], wo
         own = iconsets.get(declaration.icon_file)
         icon = icns.largest(own) if own else None
         sidebar_icon = icns.sidebar_icon(own, iconsets.get(declaration.sidebar_icon_file))
-        placements[type_identifier] = Placement(type_identifier, icon, sidebar_icon)
+        placements[type_identifier] = Placement(type_identifier, icon, sidebar_icon, declaration.kind)
     return placements

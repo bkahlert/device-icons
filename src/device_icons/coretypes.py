@@ -13,7 +13,7 @@ MODEL_IDENTIFIER_TAG_CLASS = "com.apple.device-model-code"
 
 @dataclass(frozen=True)
 class TypeDeclaration:
-    """One entry of UTExportedTypeDeclarations, reduced to what places a device icon."""
+    """One entry of UTExportedTypeDeclarations, reduced to what places a device icon and names its kind."""
 
     type_identifier: str
     model_identifiers: tuple[str, ...] = ()
@@ -21,6 +21,7 @@ class TypeDeclaration:
     icon_file: str | None = None
     sidebar_icon_file: str | None = None
     symbol_name: str | None = None
+    kind: str | None = None
 
 
 def bundles(root: Path) -> list[Path]:
@@ -52,18 +53,19 @@ def read(root: Path) -> dict[str, TypeDeclaration]:
                 icon_file=icons.get("UTTypeIconFile") or entry.get("UTTypeIconFile"),
                 sidebar_icon_file=icons.get("_UTTypeTemplateIconFile"),
                 symbol_name=icons.get("UTTypeSymbolName"),
+                kind=entry.get("UTTypeDescription"),
             )
             declarations.setdefault(declaration.type_identifier, declaration)
     return declarations
 
 
 def inherit(declaration: TypeDeclaration, declarations: dict[str, TypeDeclaration]) -> TypeDeclaration:
-    """Return the declaration with a missing icon file or sidebar icon file taken from the nearest type it conforms to.
+    """Return the declaration with a missing icon file, sidebar icon file, or kind taken from the nearest type it conforms to.
 
     Parents are searched breadth first; unknown parents are skipped, and each type is visited once.
     """
     queue, seen = deque(declaration.conforms_to), set()
-    while queue and (declaration.icon_file is None or declaration.sidebar_icon_file is None):
+    while queue and None in (declaration.icon_file, declaration.sidebar_icon_file, declaration.kind):
         type_identifier = queue.popleft()
         if type_identifier in seen or type_identifier not in declarations:
             continue
@@ -73,6 +75,8 @@ def inherit(declaration: TypeDeclaration, declarations: dict[str, TypeDeclaratio
             declaration = replace(declaration, icon_file=parent.icon_file)
         if declaration.sidebar_icon_file is None and parent.sidebar_icon_file is not None:
             declaration = replace(declaration, sidebar_icon_file=parent.sidebar_icon_file)
+        if declaration.kind is None and parent.kind is not None:
+            declaration = replace(declaration, kind=parent.kind)
         queue.extend(parent.conforms_to)
     return declaration
 
