@@ -231,6 +231,16 @@ Run the tests:
 uv run pytest
 ```
 
+Lint and format, as CI checks it:
+
+```bash
+uv run ruff check && uv run ruff format --check
+```
+
+CI runs both on macOS 15 and macOS 26 for every push and pull request, and every Monday, so a macOS update that moves
+an icon in `CoreTypes.bundle` shows up without a push. `main` takes changes through pull requests with green checks
+only.
+
 Run the tool from the checkout:
 
 ```bash
@@ -240,6 +250,22 @@ uv run device-icons --help
 Layout: `src/device_icons/` is the package, `tests/` the tests. Logic that needs no macOS, such as reading type
 declarations and building the index, is tested on fixtures, and `dns-sd` and `open` are stood in for by fakes; the
 parts that call `iconutil` or `osascript` are tested on macOS only.
+
+### Release
+
+Bump the version on a branch and land it like any other change, then tag `main`:
+
+```bash
+uv version --bump minor
+```
+
+```bash
+git tag v0.2.0 main && git push origin v0.2.0
+```
+
+The tag must name the version in `pyproject.toml`. CI tests, builds the wheel and the sdist, and publishes them as a
+[GitHub release](https://github.com/bkahlert/device-icons/releases) with generated notes; a version with a pre-release
+marker such as `0.2.0rc1` becomes a pre-release.
 
 ## Contributing
 
