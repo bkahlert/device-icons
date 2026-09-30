@@ -10,6 +10,18 @@ gives the 2019 Mac Pro tower. Two commands work with that:
 macOS only: the icons live in `CoreTypes.bundle`, and `iconutil`, `osascript`, `open`, and `dns-sd` do the work no
 Python module does. Needs [uv](https://docs.astral.sh/uv/); the runtime is the standard library.
 
+![Finder's Network view showing the eleven devices of the table below](docs/network-view.png)
+
+<!--
+docs/network-view.png: Finder's Network view with the eleven devices of the table below announced by
+
+    uv run device-icons preview --no-open AirPort4 AirPort5 AirPort6 AirPort7,120 Macmini8,1 Macmini9,1 \
+      MacPro6,1 MacPro5,1 MacPro7,1@ECOLOR=225,225,223 MacPro7,1@ECOLOR=226,226,224 Xserve3,1
+
+Icon view grouped by Kind, toolbar and sidebar hidden, captured with shift-command-4 on a Retina display, then the
+hosts of the home network edited out with ChatGPT Astra, one of them kept as the PC.
+-->
+
 ## Dump
 
 | Model identifier | `AirPort4` | `AirPort5` | `AirPort7,120` | `Macmini8,1` | `Macmini9,1` | `MacPro5,1` | `MacPro6,1` | `AirPort6` | `Xserve3,1` | `MacPro7,1`<br/>`@ECOLOR=`<br/>`225,225,223` | `MacPro7,1`<br/>`@ECOLOR=`<br/>`226,226,224` |
@@ -133,7 +145,7 @@ uv run device-icons preview MacPro7,1
 ```
 
 Finder's Network view opens, and within a few seconds a device named `MacPro7,1` appears there, drawn with the icon the
-identifier produces. `preview` keeps it there until Ctrl-C, a termination signal, or one of its registrations ending,
+identifier produces, as pictured above. `preview` keeps it there until Ctrl-C, a termination signal, or one of its registrations ending,
 then unregisters.
 
 Several at once, to compare:
