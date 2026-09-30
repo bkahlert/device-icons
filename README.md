@@ -56,20 +56,30 @@ uv run device-icons dump ~/Desktop/device-icons
 It is emptied first, but only when it is missing, empty, or holds an earlier dump. A `README.md` counts as an earlier
 dump's only when it starts with the dump's first sentence; any other stops `dump`.
 
-Only some types, for a project's docs say, and without Finder:
+Only some model identifiers, a project's devices say, and without Finder:
+
+```bash
+uv run device-icons dump --no-open --model MacPro7,1 --model Xserve3,1 docs/icons
+```
+
+`--model` restricts the dump to the given model identifiers and the types they resolve to. One that is not declared,
+or resolves to no type, or whose type has no icon or no sidebar icon, ends `dump` before anything is written, with a
+message naming it and what is missing.
+
+Or whole types:
 
 ```bash
 uv run device-icons dump --no-open --type com.apple.macpro-2019 --type com.apple.xserve-xeon docs/icons
 ```
 
-`--type` restricts the dump to the given type identifiers and the model identifiers that resolve to them; the layout
-stays the same. A type identifier that is not declared, or whose type has no icon or no sidebar icon, ends `dump` before
-anything is written, with a message naming it and what is missing. `--no-open` skips opening the output directory in Finder.
+`--type` restricts the dump to the given type identifiers and the model identifiers that resolve to them, and refuses
+the same way. `--type` and `--model` exclude each other; the layout stays the same for both. `--no-open` skips opening
+the output directory in Finder.
 
 For the few model identifiers of a project's README, a column per model identifier:
 
 ```bash
-uv run device-icons dump --horizontal --no-open --type com.apple.macpro-2019 --type com.apple.xserve-xeon docs/icons
+uv run device-icons dump --horizontal --no-open --model MacPro7,1 --model Xserve3,1 docs/icons
 ```
 
 `--horizontal` turns `README.md`'s table: the model identifiers head the columns, and type identifier, kind, icon, and

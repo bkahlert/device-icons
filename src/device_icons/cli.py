@@ -15,12 +15,20 @@ def parser() -> argparse.ArgumentParser:
     commands = root.add_subparsers(dest="command", required=True)
     dumping = commands.add_parser("dump", help="write the icon and sidebar icon of every device type, grouped for picking in Finder")
     dumping.add_argument("out", nargs="?", type=Path, default=Path("out"), help="output directory, emptied first (default: out)")
-    dumping.add_argument(
+    only = dumping.add_mutually_exclusive_group()
+    only.add_argument(
         "--type",
         dest="type_identifiers",
         metavar="TYPE_IDENTIFIER",
         action="append",
         help="dump only this type identifier, with the model identifiers that resolve to it; repeatable",
+    )
+    only.add_argument(
+        "--model",
+        dest="model_identifiers",
+        metavar="MODEL_IDENTIFIER",
+        action="append",
+        help="dump only this model identifier, with the type it resolves to; repeatable",
     )
     dumping.add_argument("--no-open", dest="open", action="store_false", help="do not open the output directory in Finder")
     dumping.add_argument("--horizontal", action="store_true", help="lay README.md's table out with a column per model identifier")
@@ -38,7 +46,7 @@ def main(argv: list[str] | None = None) -> int:
     if sys.platform != "darwin":
         sys.exit("macOS only: needs CoreTypes.bundle, iconutil, osascript, and dns-sd")
     if arguments.command == "dump":
-        print(dump.dump(arguments.out, arguments.type_identifiers, arguments.horizontal))
+        print(dump.dump(arguments.out, arguments.type_identifiers, arguments.model_identifiers, arguments.horizontal))
         if arguments.open:
             finder.show(arguments.out)
     else:

@@ -191,36 +191,40 @@ def write(out: Path, laid: Layout, horizontal: bool = False) -> None:
     (out / "README.md").write_text(markdown(laid.rows, horizontal))
 
 
-def dump(out: Path, type_identifiers: list[str] | None = None, horizontal: bool = False) -> str:
-    """Dump the icons of every device type, or of the given type identifiers, into out; return a summary line.
+def dump(out: Path, type_identifiers: list[str] | None = None, model_identifiers: list[str] | None = None, horizontal: bool = False) -> str:
+    """Dump the icons of every device type, or of the given type or model identifiers, into out; return a summary line.
 
     horizontal lays README.md's table out with a column per model identifier.
 
-    Exits if a given type identifier is not declared, or has no icon or no sidebar icon, naming it under the reason.
+    Exits if a given type or model identifier is not declared, a given model identifier resolves to no type, or the
+    type has no icon or no sidebar icon, naming the given identifier under the reason.
     """
     declarations = coretypes.read(coretypes.BUNDLE)
     search = coretypes.bundles(coretypes.BUNDLE)
-    if type_identifiers and (unknown := [name for name in type_identifiers if name not in declarations]):
+    known = sorted({name for declaration in declarations.values() for name in declaration.model_identifiers})
+    unknown = [name for name in type_identifiers or [] if name not in declarations] + [name for name in model_identifiers or [] if name not in known]
+    if unknown:
         sys.exit(f"not declared in {coretypes.BUNDLE}: {', '.join(unknown)}")
-    model_identifiers = sorted({name for declaration in declarations.values() for name in declaration.model_identifiers})
-    resolved = declared(launchservices.preferred_type_identifiers(model_identifiers), declarations)
+    resolved = declared(launchservices.preferred_type_identifiers(model_identifiers or known), declarations)
+    if model_identifiers and (untyped := [name for name, winner in resolved.items() if winner is None]):
+        sys.exit(f"no type in {coretypes.BUNDLE}: {', '.join(untyped)}")
     if type_identifiers:
         chosen = set(type_identifiers)
         resolved = {name: winner for name, winner in resolved.items() if winner in chosen}
     else:
         chosen = {winner for winner in resolved.values() if winner is not None}
+    given = [(name, name) for name in type_identifiers or []] + [(name, resolved[name]) for name in model_identifiers or []]
     kinds = {name: finder.kind({name, *coretypes.ancestors(declarations[name], declarations)}) for name in chosen}
     with tempfile.TemporaryDirectory() as tmp:
         placements = _placements({name: coretypes.inherit(declarations[name], declarations) for name in chosen}, kinds, search, Path(tmp))
-        if type_identifiers:
-            lacking = {"no icon": [], "no sidebar icon": []}
-            for name in type_identifiers:
-                if placements[name].icon is None:
-                    lacking["no icon"].append(name)
-                elif placements[name].sidebar_icon is None:
-                    lacking["no sidebar icon"].append(name)
-            if any(lacking.values()):
-                sys.exit("\n".join(f"{reason} in {coretypes.BUNDLE}: {', '.join(names)}" for reason, names in lacking.items() if names))
+        lacking = {"no icon": [], "no sidebar icon": []}
+        for name, type_identifier in given:
+            if placements[type_identifier].icon is None:
+                lacking["no icon"].append(name)
+            elif placements[type_identifier].sidebar_icon is None:
+                lacking["no sidebar icon"].append(name)
+        if any(lacking.values()):
+            sys.exit("\n".join(f"{reason} in {coretypes.BUNDLE}: {', '.join(names)}" for reason, names in lacking.items() if names))
         laid = layout(placements, resolved)
         write(out, laid, horizontal)
     failed = finder.set_folder_icons({out / folder: out / sidebar for folder, sidebar in laid.folders.items()})

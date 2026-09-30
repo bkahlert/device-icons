@@ -15,13 +15,24 @@ class TestParser:
         def test_defaults_to_every_type_into_out(self):
             result = parser().parse_args(["dump"])
 
-            assert (result.command, result.out, result.type_identifiers) == ("dump", Path("out"), None)
+            assert (result.command, result.out, result.type_identifiers, result.model_identifiers) == ("dump", Path("out"), None, None)
 
         def test_collects_repeated_types_and_the_output_directory(self):
             result = parser().parse_args(["dump", "--type", "com.apple.macpro-2019", "--type", "com.apple.xserve-xeon", "docs/icons"])
 
             assert result.type_identifiers == ["com.apple.macpro-2019", "com.apple.xserve-xeon"]
             assert result.out == Path("docs/icons")
+
+        def test_collects_repeated_model_identifiers(self):
+            result = parser().parse_args(["dump", "--model", "MacPro7,1", "--model", "Xserve3,1"])
+
+            assert result.model_identifiers == ["MacPro7,1", "Xserve3,1"]
+
+        def test_refuses_type_and_model_together(self):
+            with pytest.raises(SystemExit) as exit:
+                parser().parse_args(["dump", "--type", "com.apple.macpro-2019", "--model", "Xserve3,1"])
+
+            assert exit.value.code == 2
 
         def test_opens_the_output_directory_by_default(self):
             result = parser().parse_args(["dump"])
@@ -145,6 +156,17 @@ class TestMain:
                 main(["dump", "--no-open", "--type", "com.apple.xserve-xeon", str(tmp_path / "out")])
 
                 assert not opening.log.exists()
+
+        class TestModel:
+            def test_dumps_only_that_model_identifier(self, tmp_path, fake_command):
+                fake_command("open")
+                out = tmp_path / "out"
+
+                main(["dump", "--model", "Xserve3,1", str(out)])
+
+                readme = (out / "README.md").read_text()
+                assert "| `Xserve3,1` |" in readme
+                assert "RackMac" not in readme
 
         class TestHorizontal:
             def test_lays_the_table_out_by_column(self, tmp_path, fake_command):

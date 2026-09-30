@@ -291,6 +291,29 @@ class TestDump:
 
         assert "| `Xserve3,1` | `com.apple.xserve-xeon` | Mac | <img" in (out / "README.md").read_text()
 
+    class TestOnModelIdentifiers:
+        def test_writes_only_those_with_the_types_they_resolve_to(self, tmp_path):
+            out = tmp_path / "out"
+
+            result = dump(out, model_identifiers=["Xserve3,1", "MacPro7,1"])
+
+            index = json.loads((out / "index.json").read_text())
+            placed = sorted(name for group in index["sidebars"].values() for entry in group["icons"].values() for name in entry["model_identifiers"])
+            assert placed == ["MacPro7,1", "Xserve3,1"]
+            assert result.startswith("2 model identifiers: 2 placed under 2 sidebar icons and 2 icons")
+
+        def test_refuses_one_that_is_not_declared(self, tmp_path):
+            with pytest.raises(SystemExit, match=r"^not declared in .*: Foo1,1$"):
+                dump(tmp_path / "out", model_identifiers=["Xserve3,1", "Foo1,1"])
+
+        def test_refuses_one_without_type(self, tmp_path):
+            with pytest.raises(SystemExit, match=r"^no type in .*: AppleDisplay18,2$"):
+                dump(tmp_path / "out", model_identifiers=["AppleDisplay18,2"])
+
+        def test_refuses_one_whose_type_has_no_sidebar_icon(self, tmp_path):
+            with pytest.raises(SystemExit, match=r"^no sidebar icon in .*: Watch7,1$"):
+                dump(tmp_path / "out", model_identifiers=["Watch7,1"])
+
     def test_refuses_a_type_that_is_not_declared(self, tmp_path):
         with pytest.raises(SystemExit, match="com.apple.no-such-device"):
             dump(tmp_path / "out", ["com.apple.no-such-device"])
