@@ -1,5 +1,17 @@
 # device-icons
 
+Finder draws a network device with the icon of the Apple device its `_device-info._tcp` record names: `model=MacPro7,1`
+gives the 2019 Mac Pro tower. Two commands work with that:
+
+- [`dump`](#dump) writes every icon macOS knows for such a model identifier, grouped so one can be picked by eye in
+  Finder.
+- [`preview`](#preview) shows a model identifier in Finder's Network view without owning the device.
+
+macOS only: the icons live in `CoreTypes.bundle`, and `iconutil`, `osascript`, `open`, and `dns-sd` do the work no
+Python module does. Needs [uv](https://docs.astral.sh/uv/); the runtime is the standard library.
+
+## Dump
+
 | Model identifier | `AirPort4` | `AirPort5` | `AirPort7,120` | `Macmini8,1` | `Macmini9,1` | `MacPro5,1` | `MacPro6,1` | `AirPort6` | `Xserve3,1` | `MacPro7,1`<br/>`@ECOLOR=`<br/>`225,225,223` | `MacPro7,1`<br/>`@ECOLOR=`<br/>`226,226,224` |
 | --- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | Type identifier | `com.apple.airport-express` | `com.apple.airport` | `com.apple.airport-extreme-tower` | `com.apple.macmini-2018` | `com.apple.macmini-2020` | `com.apple.macpro-firewire` | `com.apple.macpro-cylinder` | `com.apple.time-capsule` | `com.apple.xserve-xeon` | `com.apple.macpro-2019` | `com.apple.macpro-2019-rackmount` |
@@ -20,18 +32,6 @@ The table above is docs/icons/README.md, made with
 then pngquant --ext .png --force docs/icons/icons/*.png to keep the repository small, and the image paths
 prefixed with docs/icons/ since this file sits at the repository root.
 -->
-
-Finder draws a network device with the icon of the Apple device its `_device-info._tcp` record names: `model=MacPro7,1`
-gives the 2019 Mac Pro tower. Two commands work with that:
-
-- [`dump`](#dump) writes every icon macOS knows for such a model identifier, grouped so one can be picked by eye in
-  Finder.
-- [`preview`](#preview) shows a model identifier in Finder's Network view without owning the device.
-
-macOS only: the icons live in `CoreTypes.bundle`, and `iconutil`, `osascript`, `open`, and `dns-sd` do the work no
-Python module does. Needs [uv](https://docs.astral.sh/uv/); the runtime is the standard library.
-
-## Dump
 
 A device that announces itself over Bonjour, a Raspberry Pi say, can wear any icon macOS has for an Apple device. To
 pick one, dump them all:
@@ -104,7 +104,7 @@ uv run device-icons dump --horizontal --no-open --model MacPro7,1 --model Xserve
 ```
 
 `--horizontal` turns `README.md`'s table: the model identifiers head the columns, and type identifier, kind, icon, and
-sidebar icon are the rows, as at the top of this page.
+sidebar icon are the rows, as at the top of this section.
 
 From another project, without a checkout:
 
