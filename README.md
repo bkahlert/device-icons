@@ -21,13 +21,14 @@ that type's icon and sidebar icon, and writes:
 | Path                             | Content                                                                             |
 | -------------------------------- | ----------------------------------------------------------------------------------- |
 | `icons/<icon file>.png`          | the largest image of each icon file, written once                                   |
-| `sidebar/<sidebar file>.png`     | each 64 px sidebar icon, written once                                               |
+| `sidebar/<sidebar>.png`          | each 64 px sidebar icon, written once, named after its `Sidebar….icns` or, when embedded, after its icon file |
 | `by-sidebar/<sidebar>/`          | one folder per sidebar icon, wearing it as its folder icon                          |
 | `by-sidebar/<sidebar>/<icon>.png` | a link to `icons/<icon>.png` for every icon that comes with that sidebar icon      |
 | `index.json`                     | `sidebars`: sidebar icon, then icon, then types and model identifiers; `dropped`: model identifiers left out, by reason |
 
 `--type` restricts the dump to the given type identifiers and the model identifiers that resolve to them; the layout stays
-the same.
+the same. A type identifier that is not declared, or whose type has no icon or no sidebar icon, ends `dump` with a message
+naming it before anything is written.
 
 Open `out/by-sidebar` in Finder: each folder shows a sidebar icon, inside it the realistic icons that go with it. Having
 chosen an icon, its model identifiers are in `index.json`:
@@ -72,7 +73,7 @@ uv run device-icons preview --name "Rack" MacPro7,1@ECOLOR=226,226,224
 
 `preview` registers, for each model identifier, two proxy records from the Mac itself: an `_smb._tcp` service and a
 `_device-info._tcp` service carrying `model=<identifier>`, both under the same service instance name, which defaults to the
-identifier. Open Network in Finder (Go, Network, or ⇧⌘K); the device appears within a few seconds, drawn with the icon
+identifier. Since Finder pairs the two records by that name, `--name` takes exactly one model identifier. Open Network in Finder (Go, Network, or ⇧⌘K); the device appears within a few seconds, drawn with the icon
 the identifier produces. `preview` blocks until Ctrl-C, a termination signal, or one of the registrations ending, then
 unregisters.
 
@@ -133,8 +134,8 @@ uv run device-icons --help
 ```
 
 Layout: `src/device_icons/` is the package, `tests/` the tests. Logic that needs no macOS, such as reading type
-declarations and building the index, is tested on fixtures; the parts that call `iconutil`, `osascript`, or `dns-sd` are
-tested on macOS only.
+declarations and building the index, is tested on fixtures, and `dns-sd` is stood in for by a fake; the parts that call
+`iconutil` or `osascript` are tested on macOS only.
 
 ## Contributing
 
