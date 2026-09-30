@@ -1,0 +1,158 @@
+{
+  "sidebars": {
+    "SidebarAirportExpress": {
+      "sidebar_icon": "sidebar/SidebarAirportExpress.png",
+      "icons": {
+        "com.apple.airport-express": {
+          "icon": "icons/com.apple.airport-express.png",
+          "type_identifiers": [
+            "com.apple.airport-express"
+          ],
+          "model_identifiers": [
+            "AirPort4"
+          ]
+        }
+      }
+    },
+    "SidebarAirportExtreme": {
+      "sidebar_icon": "sidebar/SidebarAirportExtreme.png",
+      "icons": {
+        "com.apple.airport-extreme": {
+          "icon": "icons/com.apple.airport-extreme.png",
+          "type_identifiers": [
+            "com.apple.airport"
+          ],
+          "model_identifiers": [
+            "AirPort5"
+          ]
+        }
+      }
+    },
+    "SidebarAirportExtremeTower": {
+      "sidebar_icon": "sidebar/SidebarAirportExtremeTower.png",
+      "icons": {
+        "com.apple.airport-extreme-tower": {
+          "icon": "icons/com.apple.airport-extreme-tower.png",
+          "type_identifiers": [
+            "com.apple.airport-extreme-tower"
+          ],
+          "model_identifiers": [
+            "AirPort7,120"
+          ]
+        }
+      }
+    },
+    "SidebarMacMini": {
+      "sidebar_icon": "sidebar/SidebarMacMini.png",
+      "icons": {
+        "com.apple.macmini-2018": {
+          "icon": "icons/com.apple.macmini-2018.png",
+          "type_identifiers": [
+            "com.apple.macmini-2018"
+          ],
+          "model_identifiers": [
+            "Macmini8,1"
+          ]
+        },
+        "com.apple.macmini-2020": {
+          "icon": "icons/com.apple.macmini-2020.png",
+          "type_identifiers": [
+            "com.apple.macmini-2020"
+          ],
+          "model_identifiers": [
+            "Macmini9,1"
+          ]
+        }
+      }
+    },
+    "SidebarMacPro": {
+      "sidebar_icon": "sidebar/SidebarMacPro.png",
+      "icons": {
+        "com.apple.macpro": {
+          "icon": "icons/com.apple.macpro.png",
+          "type_identifiers": [
+            "com.apple.macpro-firewire"
+          ],
+          "model_identifiers": [
+            "MacPro5,1"
+          ]
+        }
+      }
+    },
+    "SidebarMacProCylinder": {
+      "sidebar_icon": "sidebar/SidebarMacProCylinder.png",
+      "icons": {
+        "com.apple.macpro-cylinder": {
+          "icon": "icons/com.apple.macpro-cylinder.png",
+          "type_identifiers": [
+            "com.apple.macpro-cylinder"
+          ],
+          "model_identifiers": [
+            "MacPro6,1"
+          ]
+        }
+      }
+    },
+    "SidebarTimeCapsule": {
+      "sidebar_icon": "sidebar/SidebarTimeCapsule.png",
+      "icons": {
+        "com.apple.time-capsule": {
+          "icon": "icons/com.apple.time-capsule.png",
+          "type_identifiers": [
+            "com.apple.time-capsule"
+          ],
+          "model_identifiers": [
+            "AirPort6"
+          ]
+        }
+      }
+    },
+    "SidebarXserve": {
+      "sidebar_icon": "sidebar/SidebarXserve.png",
+      "icons": {
+        "com.apple.xserve": {
+          "icon": "icons/com.apple.xserve.png",
+          "type_identifiers": [
+            "com.apple.xserve-xeon"
+          ],
+          "model_identifiers": [
+            "Xserve3,1"
+          ]
+        }
+      }
+    },
+    "com.apple.macpro-2019": {
+      "sidebar_icon": "sidebar/com.apple.macpro-2019.png",
+      "icons": {
+        "com.apple.macpro-2019": {
+          "icon": "icons/com.apple.macpro-2019.png",
+          "type_identifiers": [
+            "com.apple.macpro-2019"
+          ],
+          "model_identifiers": [
+            "MacPro7,1@ECOLOR=225,225,223"
+          ]
+        }
+      }
+    },
+    "com.apple.macpro-2019-rackmount": {
+      "sidebar_icon": "sidebar/com.apple.macpro-2019-rackmount.png",
+      "icons": {
+        "com.apple.macpro-2019-rackmount": {
+          "icon": "icons/com.apple.macpro-2019-rackmount.png",
+          "type_identifiers": [
+            "com.apple.macpro-2019-rackmount"
+          ],
+          "model_identifiers": [
+            "MacPro7,1@ECOLOR=226,226,224"
+          ]
+        }
+      }
+    }
+  },
+  "dropped": {
+    "no type": [],
+    "no icon": [],
+    "no sidebar icon": []
+  }
+}
