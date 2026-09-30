@@ -117,19 +117,37 @@ def declared(preferred: dict[str, str], declarations: Iterable[str]) -> dict[str
     return {model_identifier: by_lower.get(winner.lower()) for model_identifier, winner in preferred.items()}
 
 
-def markdown(rows: list[Row]) -> str:
-    """Return README.md: LEAD and a table with a row per model identifier."""
-    lines = [
-        LEAD,
-        "",
-        "| Model identifier | Type identifier | Kind | Icon | Sidebar icon |",
-        "| --- | --- | --- | :-: | :-: |",
+def markdown(rows: list[Row], horizontal: bool = False) -> str:
+    """Return README.md: LEAD and a table with a row per model identifier, or a column per one if horizontal."""
+    cells = [
+        (
+            f"`{row.model_identifier}`",
+            f"`{row.type_identifier}`",
+            row.kind,
+            f'<img src="{row.icon.as_posix()}" alt="{row.icon.stem}" width="{ICON_WIDTH}">',
+            f'<img src="{row.sidebar_icon.as_posix()}" alt="{row.sidebar_icon.stem}" width="{SIDEBAR_ICON_WIDTH}">',
+        )
+        for row in rows
     ]
-    for row in rows:
-        icon = f'<img src="{row.icon.as_posix()}" alt="{row.icon.stem}" width="{ICON_WIDTH}">'
-        sidebar_icon = f'<img src="{row.sidebar_icon.as_posix()}" alt="{row.sidebar_icon.stem}" width="{SIDEBAR_ICON_WIDTH}">'
-        lines.append(f"| `{row.model_identifier}` | `{row.type_identifier}` | {row.kind} | {icon} | {sidebar_icon} |")
-    return "\n".join(lines) + "\n"
+    headers = ("Model identifier", "Type identifier", "Kind", "Icon", "Sidebar icon")
+    if horizontal:
+        table = [
+            (headers[0], *(_stacked(row.model_identifier) for row in rows)),
+            ("---", *[":-:"] * len(rows)),
+            *((header, *(cell[index] for cell in cells)) for index, header in enumerate(headers) if index),
+        ]
+    else:
+        table = [headers, ("---", "---", "---", ":-:", ":-:"), *cells]
+    return "\n".join([LEAD, "", *(f"| {' | '.join(line)} |" for line in table)]) + "\n"
+
+
+def _stacked(model_identifier: str) -> str:
+    """Return the model identifier in code, an @KEY=value suffix on two more lines so the column stays narrow."""
+    head, at, rest = model_identifier.partition("@")
+    if not at:
+        return f"`{head}`"
+    key, equals, value = rest.partition("=")
+    return f"`{head}`<br/>`@{key}{equals}`<br/>`{value}`"
 
 
 def clear(out: Path) -> None:
@@ -159,7 +177,7 @@ def _ours(path: Path) -> bool:
     return path.name in OURS
 
 
-def write(out: Path, laid: Layout) -> None:
+def write(out: Path, laid: Layout, horizontal: bool = False) -> None:
     """Clear the output directory, then write the layout's files, relative links, index.json, and README.md."""
     clear(out)
     for target, source in laid.files.items():
@@ -170,11 +188,13 @@ def write(out: Path, laid: Layout) -> None:
         os.symlink(os.path.relpath(out / target, (out / link).parent), out / link)
     index = {"sidebars": laid.sidebars, "dropped": laid.dropped}
     (out / "index.json").write_text(json.dumps(index, indent=2) + "\n")
-    (out / "README.md").write_text(markdown(laid.rows))
+    (out / "README.md").write_text(markdown(laid.rows, horizontal))
 
 
-def dump(out: Path, type_identifiers: list[str] | None = None) -> str:
+def dump(out: Path, type_identifiers: list[str] | None = None, horizontal: bool = False) -> str:
     """Dump the icons of every device type, or of the given type identifiers, into out; return a summary line.
+
+    horizontal lays README.md's table out with a column per model identifier.
 
     Exits if a given type identifier is not declared, or has no icon or no sidebar icon, naming it under the reason.
     """
@@ -202,7 +222,7 @@ def dump(out: Path, type_identifiers: list[str] | None = None) -> str:
             if any(lacking.values()):
                 sys.exit("\n".join(f"{reason} in {coretypes.BUNDLE}: {', '.join(names)}" for reason, names in lacking.items() if names))
         laid = layout(placements, resolved)
-        write(out, laid)
+        write(out, laid, horizontal)
     failed = finder.set_folder_icons({out / folder: out / sidebar for folder, sidebar in laid.folders.items()})
     if failed:
         print(f"no folder icon for {', '.join(str(folder) for folder in failed)}", file=sys.stderr)

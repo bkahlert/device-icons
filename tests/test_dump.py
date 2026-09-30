@@ -158,6 +158,25 @@ class TestMarkdown:
         ]
 
 
+    class TestOnHorizontal:
+        def test_lays_out_a_column_per_model_identifier(self):
+            rows = [
+                Row("Xserve3,1", "com.apple.xserve-xeon", "Mac", Path("icons/com.apple.xserve.png"), Path("sidebar/SidebarXserve.png")),
+                Row("MacPro7,1@ECOLOR=226,226,224", "com.apple.macpro-2019-rackmount", "Mac", Path("icons/com.apple.macpro-2019-rackmount.png"), Path("sidebar/com.apple.macpro-2019-rackmount.png")),
+            ]
+
+            result = markdown(rows, horizontal=True)
+
+            assert result.splitlines()[-6:] == [
+                "| Model identifier | `Xserve3,1` | `MacPro7,1`<br/>`@ECOLOR=`<br/>`226,226,224` |",
+                "| --- | :-: | :-: |",
+                "| Type identifier | `com.apple.xserve-xeon` | `com.apple.macpro-2019-rackmount` |",
+                "| Kind | Mac | Mac |",
+                '| Icon | <img src="icons/com.apple.xserve.png" alt="com.apple.xserve" width="128"> | <img src="icons/com.apple.macpro-2019-rackmount.png" alt="com.apple.macpro-2019-rackmount" width="128"> |',
+                '| Sidebar icon | <img src="sidebar/SidebarXserve.png" alt="SidebarXserve" width="32"> | <img src="sidebar/com.apple.macpro-2019-rackmount.png" alt="com.apple.macpro-2019-rackmount" width="32"> |',
+            ]
+
+
 class TestClear:
     def test_creates_a_missing_directory(self, tmp_path):
         out = tmp_path / "out"
@@ -238,6 +257,14 @@ class TestWrite:
         assert link.read_bytes() == b"icon"
         assert json.loads((out / "index.json").read_text()) == {"sidebars": laid.sidebars, "dropped": laid.dropped}
         assert (out / "README.md").read_text() == markdown(laid.rows)
+
+    class TestOnHorizontal:
+        def test_lays_the_table_out_by_column(self, tmp_path):
+            rows = [Row("Xserve3,1", "com.apple.xserve-xeon", "Mac", Path("icons/com.apple.xserve.png"), Path("sidebar/SidebarMacPro.png"))]
+
+            write(tmp_path / "out", Layout(rows=rows), horizontal=True)
+
+            assert (tmp_path / "out" / "README.md").read_text() == markdown(rows, horizontal=True)
 
 
 @pytest.mark.macos

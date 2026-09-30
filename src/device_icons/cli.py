@@ -23,6 +23,7 @@ def parser() -> argparse.ArgumentParser:
         help="dump only this type identifier, with the model identifiers that resolve to it; repeatable",
     )
     dumping.add_argument("--no-open", dest="open", action="store_false", help="do not open the output directory in Finder")
+    dumping.add_argument("--horizontal", action="store_true", help="lay README.md's table out with a column per model identifier")
     previewing = commands.add_parser("preview", help="show model identifiers as devices in Finder's Network view until Ctrl-C")
     previewing.add_argument("model_identifiers", metavar="MODEL_IDENTIFIER", nargs="+", help="a model identifier, such as MacPro7,1")
     previewing.add_argument("--name", help="service instance name Finder shows (default: the model identifier)")
@@ -37,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
     if sys.platform != "darwin":
         sys.exit("macOS only: needs CoreTypes.bundle, iconutil, osascript, and dns-sd")
     if arguments.command == "dump":
-        print(dump.dump(arguments.out, arguments.type_identifiers))
+        print(dump.dump(arguments.out, arguments.type_identifiers, arguments.horizontal))
         if arguments.open:
             finder.show(arguments.out)
     else:

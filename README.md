@@ -66,6 +66,15 @@ uv run device-icons dump --no-open --type com.apple.macpro-2019 --type com.apple
 stays the same. A type identifier that is not declared, or whose type has no icon or no sidebar icon, ends `dump` before
 anything is written, with a message naming it and what is missing. `--no-open` skips opening the output directory in Finder.
 
+For the few model identifiers of a project's README, a column per model identifier:
+
+```bash
+uv run device-icons dump --horizontal --no-open --type com.apple.macpro-2019 --type com.apple.xserve-xeon docs/icons
+```
+
+`--horizontal` turns `README.md`'s table: the model identifiers head the columns, and type identifier, kind, icon, and
+sidebar icon are the rows.
+
 From another project, without a checkout:
 
 ```bash
@@ -82,7 +91,7 @@ resolves to, takes that type's icon and sidebar icon, and writes:
 | `by-sidebar/<sidebar>/`          | one folder per sidebar icon, wearing it as its folder icon                          |
 | `by-sidebar/<sidebar>/<icon>.png` | a link to `icons/<icon>.png` for every icon that comes with that sidebar icon      |
 | `index.json`                     | `sidebars`: sidebar icon, then icon, then types and model identifiers; `dropped`: model identifiers left out, by reason |
-| `README.md`                      | a Markdown table, one row per placed model identifier, grouped by sidebar icon: type identifier, kind, icon at 128 px, sidebar icon at 32 px |
+| `README.md`                      | a Markdown table, one row per placed model identifier, grouped by sidebar icon: type identifier, kind, icon at 128 px, sidebar icon at 32 px; a column per model identifier with `--horizontal` |
 
 ## Preview
 

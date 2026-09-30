@@ -28,11 +28,22 @@ class TestParser:
 
             assert result.open is True
 
+        def test_lays_the_table_out_vertically_by_default(self):
+            result = parser().parse_args(["dump"])
+
+            assert result.horizontal is False
+
         class TestNoOpen:
             def test_turns_opening_off(self):
                 result = parser().parse_args(["dump", "--no-open"])
 
                 assert result.open is False
+
+        class TestHorizontal:
+            def test_turns_the_table(self):
+                result = parser().parse_args(["dump", "--horizontal"])
+
+                assert result.horizontal is True
 
     class TestPreview:
         def test_collects_the_model_identifiers_and_the_name(self):
@@ -134,6 +145,15 @@ class TestMain:
                 main(["dump", "--no-open", "--type", "com.apple.xserve-xeon", str(tmp_path / "out")])
 
                 assert not opening.log.exists()
+
+        class TestHorizontal:
+            def test_lays_the_table_out_by_column(self, tmp_path, fake_command):
+                fake_command("open")
+                out = tmp_path / "out"
+
+                main(["dump", "--horizontal", "--type", "com.apple.xserve-xeon", str(out)])
+
+                assert "| Type identifier | `com.apple.xserve-xeon` |" in (out / "README.md").read_text()
 
 
 
