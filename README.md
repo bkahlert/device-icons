@@ -22,8 +22,8 @@ uv run device-icons dump
 The dump lands in `out/`, which opens in Finder. Its `by-sidebar/` holds one folder per sidebar icon, each wearing that
 icon; inside are the icons that come with it. Having picked one, `index.json` lists the model identifiers that produce
 it, and any of them, announced as `model=…`, makes Finder draw it. `README.md` holds the same as a table to scroll
-through, one row per model identifier with its type identifier, kind, icon, and sidebar icon, and GitHub renders it
-when the dump is browsed there:
+through, one row per model identifier with its type identifier, kind, icon, and sidebar icon, grouped by sidebar icon
+and sorted by model identifier within; GitHub renders it when the dump is browsed there:
 
 ```json
 {
@@ -82,7 +82,7 @@ resolves to, takes that type's icon and sidebar icon, and writes:
 | `by-sidebar/<sidebar>/`          | one folder per sidebar icon, wearing it as its folder icon                          |
 | `by-sidebar/<sidebar>/<icon>.png` | a link to `icons/<icon>.png` for every icon that comes with that sidebar icon      |
 | `index.json`                     | `sidebars`: sidebar icon, then icon, then types and model identifiers; `dropped`: model identifiers left out, by reason |
-| `README.md`                      | a Markdown table, one row per placed model identifier: type identifier, kind, icon at 128 px, sidebar icon at 32 px |
+| `README.md`                      | a Markdown table, one row per placed model identifier, grouped by sidebar icon: type identifier, kind, icon at 128 px, sidebar icon at 32 px |
 
 ## Preview
 

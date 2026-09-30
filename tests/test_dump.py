@@ -81,6 +81,20 @@ class TestLayout:
             Row("Xserve3,1", "com.apple.xserve-xeon", "Mac", Path("icons/com.apple.xserve.png"), Path("sidebar/SidebarMacPro.png")),
         ]
 
+    def test_groups_the_rows_by_sidebar_icon_then_sorts_by_model_identifier(self):
+        placements = {
+            "com.apple.xserve-xeon": Placement("com.apple.xserve-xeon", XSERVE, SIDEBAR_MACPRO),
+            "com.apple.macpro-2019": Placement("com.apple.macpro-2019", MACPRO, MACPRO_EMBEDDED_SIDEBAR),
+        }
+
+        result = layout(placements, {"Xserve3,1": "com.apple.xserve-xeon", "MacPro7,1": "com.apple.macpro-2019", "RackMac": "com.apple.xserve-xeon"})
+
+        assert [(row.sidebar_icon.stem, row.model_identifier) for row in result.rows] == [
+            ("SidebarMacPro", "RackMac"),
+            ("SidebarMacPro", "Xserve3,1"),
+            ("com.apple.macpro-2019", "MacPro7,1"),
+        ]
+
     class TestDropped:
         def test_lists_every_reason_even_when_empty(self):
             result = layout({}, {})

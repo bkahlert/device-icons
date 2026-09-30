@@ -65,7 +65,8 @@ def layout(placements: dict[str, Placement], resolved: dict[str, str | None]) ->
 
     resolved maps each model identifier to its preferred type identifier, or None for one no type declares.
     A model identifier whose type is missing, or has no icon, or has no sidebar icon, is dropped under that reason.
-    A type is placed even if no model identifier resolves to it; rows has only the placed model identifiers, sorted.
+    A type is placed even if no model identifier resolves to it. rows has only the placed model identifiers, grouped by
+    sidebar icon and sorted by model identifier within.
     """
     laid = Layout()
     targets: dict[str, tuple[Path, Path]] = {}
@@ -103,6 +104,7 @@ def layout(placements: dict[str, Placement], resolved: dict[str, str | None]) ->
     for group in laid.sidebars.values():
         group["icons"] = dict(sorted(group["icons"].items()))
     laid.sidebars = dict(sorted(laid.sidebars.items()))
+    laid.rows.sort(key=lambda row: (row.sidebar_icon.stem, row.model_identifier))
     return laid
 
 
