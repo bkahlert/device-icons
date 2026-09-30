@@ -83,8 +83,10 @@ class TestMain:
             with pytest.raises(SystemExit) as exit:
                 main(["preview", "--name", "Rack", "MacPro7,1", "Xserve3,1"])
 
+            error = capsys.readouterr().err
             assert exit.value.code == 2
-            assert "exactly one model identifier" in capsys.readouterr().err
+            assert "usage: device-icons preview" in error
+            assert "exactly one model identifier" in error
 
         def test_opens_the_network_view_in_finder(self, fake_command):
             fake_command("dns-sd", then="exit 1")

@@ -27,6 +27,7 @@ def parser() -> argparse.ArgumentParser:
     previewing.add_argument("model_identifiers", metavar="MODEL_IDENTIFIER", nargs="+", help="a model identifier, such as MacPro7,1")
     previewing.add_argument("--name", help="service instance name Finder shows (default: the model identifier)")
     previewing.add_argument("--no-open", dest="open", action="store_false", help="do not open Finder's Network view")
+    previewing.set_defaults(command_parser=previewing)
     return root
 
 
@@ -43,7 +44,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             commands = preview.registrations(arguments.model_identifiers, arguments.name)
         except ValueError as error:
-            parser().error(str(error))
+            arguments.command_parser.error(str(error))
         if arguments.open:
             finder.show(finder.NETWORK_VIEW)
         preview.preview(commands)
