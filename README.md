@@ -60,8 +60,8 @@ uv run device-icons dump --no-open --type com.apple.macpro-2019 --type com.apple
 ```
 
 `--type` restricts the dump to the given type identifiers and the model identifiers that resolve to them; the layout
-stays the same. A type identifier that is not declared, or whose type has no icon or no sidebar icon, ends `dump` with
-a message naming it before anything is written. `--no-open` skips opening the output directory in Finder.
+stays the same. A type identifier that is not declared, or whose type has no icon or no sidebar icon, ends `dump` before
+anything is written, with a message naming it and what is missing. `--no-open` skips opening the output directory in Finder.
 
 From another project, without a checkout:
 

@@ -197,6 +197,6 @@ class TestDump:
         with pytest.raises(SystemExit, match="com.apple.no-such-device"):
             dump(tmp_path / "out", ["com.apple.no-such-device"])
 
-    def test_refuses_a_type_without_sidebar_icon(self, tmp_path):
-        with pytest.raises(SystemExit, match="com.apple.device"):
+    def test_refuses_a_type_without_sidebar_icon_naming_what_is_missing(self, tmp_path):
+        with pytest.raises(SystemExit, match=r"^no sidebar icon in .*: com\.apple\.device$"):
             dump(tmp_path / "out", ["com.apple.device"])

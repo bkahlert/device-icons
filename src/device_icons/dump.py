@@ -117,7 +117,7 @@ def write(out: Path, laid: Layout) -> None:
 def dump(out: Path, type_identifiers: list[str] | None = None) -> str:
     """Dump the icons of every device type, or of the given type identifiers, into out; return a summary line.
 
-    Exits if a given type identifier is not declared, or has no icon or no sidebar icon.
+    Exits if a given type identifier is not declared, or has no icon or no sidebar icon, naming it under the reason.
     """
     declarations = coretypes.read(coretypes.BUNDLE)
     search = coretypes.bundles(coretypes.BUNDLE)
@@ -133,8 +133,15 @@ def dump(out: Path, type_identifiers: list[str] | None = None) -> str:
         resolved = {name: (winner if winner in declarations else None) for name, winner in preferred.items()}
     with tempfile.TemporaryDirectory() as tmp:
         placements = _placements({name: coretypes.inherit(declarations[name], declarations) for name in chosen}, search, Path(tmp))
-        if type_identifiers and (lacking := [name for name in type_identifiers if None in (placements[name].icon, placements[name].sidebar_icon)]):
-            sys.exit(f"no icon or no sidebar icon in {coretypes.BUNDLE}: {', '.join(lacking)}")
+        if type_identifiers:
+            lacking = {"no icon": [], "no sidebar icon": []}
+            for name in type_identifiers:
+                if placements[name].icon is None:
+                    lacking["no icon"].append(name)
+                elif placements[name].sidebar_icon is None:
+                    lacking["no sidebar icon"].append(name)
+            if any(lacking.values()):
+                sys.exit("\n".join(f"{reason} in {coretypes.BUNDLE}: {', '.join(names)}" for reason, names in lacking.items() if names))
         laid = layout(placements, resolved)
         write(out, laid)
     failed = finder.set_folder_icons({out / folder: out / sidebar for folder, sidebar in laid.folders.items()})
