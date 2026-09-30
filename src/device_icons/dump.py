@@ -16,8 +16,13 @@ from device_icons import coretypes, finder, icns, launchservices
 from device_icons.coretypes import TypeDeclaration
 
 DROPPED = ("no type", "no icon", "no sidebar icon")
-OURS = ("index.json", "index.md", "icons", "sidebar", "by-sidebar")
-# Rendered widths in index.md: the icon is 1024 px, the sidebar icon 64 px for a 32 pt slot.
+OURS = ("index.json", "README.md", "icons", "sidebar", "by-sidebar")
+# The first line of a dump's README.md; a README.md without it belongs to someone else and stays.
+LEAD = (
+    "The icon Finder draws for each model identifier, dumped from `CoreTypes.bundle` by"
+    " [device-icons](https://github.com/bkahlert/device-icons)."
+)
+# Rendered widths in README.md: the icon is 1024 px, the sidebar icon 64 px for a 32 pt slot.
 ICON_WIDTH = 128
 SIDEBAR_ICON_WIDTH = 32
 
@@ -34,7 +39,7 @@ class Placement:
 
 @dataclass(frozen=True)
 class Row:
-    """One model identifier's row of index.md; the paths are relative to the output directory."""
+    """One model identifier's row of README.md; the paths are relative to the output directory."""
 
     model_identifier: str
     type_identifier: str
@@ -111,10 +116,9 @@ def declared(preferred: dict[str, str], declarations: Iterable[str]) -> dict[str
 
 
 def markdown(rows: list[Row]) -> str:
-    """Return index.md: a lead sentence and a table with a row per model identifier."""
+    """Return README.md: LEAD and a table with a row per model identifier."""
     lines = [
-        "The icon Finder draws for each model identifier, dumped from `CoreTypes.bundle` by"
-        " [device-icons](https://github.com/bkahlert/device-icons).",
+        LEAD,
         "",
         "| Model identifier | Type identifier | Kind | Icon | Sidebar icon |",
         "| --- | --- | --- | :-: | :-: |",
@@ -129,7 +133,8 @@ def markdown(rows: list[Row]) -> str:
 def clear(out: Path) -> None:
     """Empty the output directory, creating it if missing.
 
-    Exits if it is not a directory, or holds anything but an earlier dump and .DS_Store.
+    Exits if it is not a directory, or holds anything but an earlier dump and .DS_Store; a README.md is an earlier
+    dump's only when it starts with LEAD.
     """
     if not out.exists():
         out.mkdir(parents=True)
@@ -137,7 +142,7 @@ def clear(out: Path) -> None:
     if not out.is_dir():
         sys.exit(f"{out} is not a directory")
     contents = [path for path in out.iterdir() if path.name != ".DS_Store"]
-    if not all(path.name in OURS for path in contents):
+    if not all(_ours(path) for path in contents):
         sys.exit(f"{out} is not empty and not an earlier dump; refusing to clear it")
     for path in contents:
         if path.is_dir() and not path.is_symlink():
@@ -146,8 +151,14 @@ def clear(out: Path) -> None:
             path.unlink()
 
 
+def _ours(path: Path) -> bool:
+    if path.name == "README.md":
+        return path.is_file() and path.read_text(errors="replace").startswith(LEAD)
+    return path.name in OURS
+
+
 def write(out: Path, laid: Layout) -> None:
-    """Clear the output directory, then write the layout's files, relative links, index.json, and index.md."""
+    """Clear the output directory, then write the layout's files, relative links, index.json, and README.md."""
     clear(out)
     for target, source in laid.files.items():
         (out / target).parent.mkdir(parents=True, exist_ok=True)
@@ -157,7 +168,7 @@ def write(out: Path, laid: Layout) -> None:
         os.symlink(os.path.relpath(out / target, (out / link).parent), out / link)
     index = {"sidebars": laid.sidebars, "dropped": laid.dropped}
     (out / "index.json").write_text(json.dumps(index, indent=2) + "\n")
-    (out / "index.md").write_text(markdown(laid.rows))
+    (out / "README.md").write_text(markdown(laid.rows))
 
 
 def dump(out: Path, type_identifiers: list[str] | None = None) -> str:

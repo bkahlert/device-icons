@@ -21,8 +21,9 @@ uv run device-icons dump
 
 The dump lands in `out/`, which opens in Finder. Its `by-sidebar/` holds one folder per sidebar icon, each wearing that
 icon; inside are the icons that come with it. Having picked one, `index.json` lists the model identifiers that produce
-it, and any of them, announced as `model=…`, makes Finder draw it. `index.md` holds the same as a table to scroll
-through, one row per model identifier with its type identifier, kind, icon, and sidebar icon:
+it, and any of them, announced as `model=…`, makes Finder draw it. `README.md` holds the same as a table to scroll
+through, one row per model identifier with its type identifier, kind, icon, and sidebar icon, and GitHub renders it
+when the dump is browsed there:
 
 ```json
 {
@@ -52,7 +53,8 @@ Another directory:
 uv run device-icons dump ~/Desktop/device-icons
 ```
 
-It is emptied first, but only when it is missing, empty, or holds an earlier dump.
+It is emptied first, but only when it is missing, empty, or holds an earlier dump. A `README.md` counts as an earlier
+dump's only when it starts with the dump's first sentence; any other stops `dump`.
 
 Only some types, for a project's docs say, and without Finder:
 
@@ -80,7 +82,7 @@ resolves to, takes that type's icon and sidebar icon, and writes:
 | `by-sidebar/<sidebar>/`          | one folder per sidebar icon, wearing it as its folder icon                          |
 | `by-sidebar/<sidebar>/<icon>.png` | a link to `icons/<icon>.png` for every icon that comes with that sidebar icon      |
 | `index.json`                     | `sidebars`: sidebar icon, then icon, then types and model identifiers; `dropped`: model identifiers left out, by reason |
-| `index.md`                       | a Markdown table, one row per placed model identifier: type identifier, kind, icon at 128 px, sidebar icon at 32 px |
+| `README.md`                      | a Markdown table, one row per placed model identifier: type identifier, kind, icon at 128 px, sidebar icon at 32 px |
 
 ## Preview
 

@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from device_icons.coretypes import BUNDLE
-from device_icons.dump import DROPPED, Layout, Placement, Row, clear, declared, dump, layout, markdown, write
+from device_icons.dump import DROPPED, LEAD, Layout, Placement, Row, clear, declared, dump, layout, markdown, write
 
 class TestLayout:
     def test_groups_the_icons_under_their_sidebar_icon(self):
@@ -127,6 +127,11 @@ class TestDeclared:
 
 
 class TestMarkdown:
+    def test_starts_with_the_lead_that_marks_it_as_a_dump(self):
+        result = markdown([])
+
+        assert result.startswith(LEAD)
+
     def test_renders_a_table_with_a_row_per_model_identifier(self):
         rows = [Row("Xserve3,1", "com.apple.xserve-xeon", "Mac", Path("icons/com.apple.xserve.png"), Path("sidebar/SidebarXserve.png"))]
 
@@ -155,7 +160,7 @@ class TestClear:
 
     def test_empties_an_earlier_dump(self, tmp_path):
         (tmp_path / "index.json").write_text("{}")
-        (tmp_path / "index.md").write_text("")
+        (tmp_path / "README.md").write_text(markdown([]))
         (tmp_path / "icons").mkdir()
         (tmp_path / "icons" / "a.png").write_bytes(b"")
         (tmp_path / "by-sidebar").mkdir()
@@ -164,6 +169,15 @@ class TestClear:
         clear(tmp_path)
 
         assert [path.name for path in tmp_path.iterdir()] == [".DS_Store"]
+
+    def test_refuses_a_readme_that_is_not_a_dumps(self, tmp_path):
+        (tmp_path / "index.json").write_text("{}")
+        (tmp_path / "README.md").write_text("# Icons\n")
+
+        with pytest.raises(SystemExit, match="not an earlier dump"):
+            clear(tmp_path)
+
+        assert (tmp_path / "README.md").read_text() == "# Icons\n"
 
     def test_refuses_a_directory_with_foreign_content(self, tmp_path):
         (tmp_path / "index.json").write_text("{}")
@@ -209,7 +223,7 @@ class TestWrite:
         assert link.readlink() == Path("../../icons/com.apple.xserve.png")
         assert link.read_bytes() == b"icon"
         assert json.loads((out / "index.json").read_text()) == {"sidebars": laid.sidebars, "dropped": laid.dropped}
-        assert (out / "index.md").read_text() == markdown(laid.rows)
+        assert (out / "README.md").read_text() == markdown(laid.rows)
 
 
 @pytest.mark.macos
@@ -234,7 +248,7 @@ class TestDump:
 
         dump(out, ["com.apple.xserve-xeon"])
 
-        assert "| `Xserve3,1` | `com.apple.xserve-xeon` | Mac | <img" in (out / "index.md").read_text()
+        assert "| `Xserve3,1` | `com.apple.xserve-xeon` | Mac | <img" in (out / "README.md").read_text()
 
     def test_refuses_a_type_that_is_not_declared(self, tmp_path):
         with pytest.raises(SystemExit, match="com.apple.no-such-device"):
