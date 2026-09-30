@@ -1,8 +1,10 @@
 import json
+import re
 from pathlib import Path
 
 import pytest
 
+from device_icons import coretypes, launchservices
 from device_icons.dump import DROPPED, LEAD, Layout, Placement, Row, clear, declared, dump, layout, markdown, write
 
 
@@ -312,8 +314,16 @@ class TestDump:
                 dump(tmp_path / "out", model_identifiers=["Xserve3,1", "Foo1,1"])
 
         def test_refuses_one_without_type(self, tmp_path):
-            with pytest.raises(SystemExit, match=r"^no type in .*: AppleDisplay18,2$"):
-                dump(tmp_path / "out", model_identifiers=["AppleDisplay18,2"])
+            # Which declared model identifier LaunchServices resolves to no type differs between macOS versions.
+            declarations = coretypes.read(coretypes.BUNDLE)
+            known = sorted({name for declaration in declarations.values() for name in declaration.model_identifiers})
+            resolved = declared(launchservices.preferred_type_identifiers(known), declarations)
+            untyped = next((name for name, winner in resolved.items() if winner is None), None)
+            if untyped is None:
+                pytest.skip("every declared model identifier resolves to a type on this macOS")
+
+            with pytest.raises(SystemExit, match=rf"^no type in .*: {re.escape(untyped)}$"):
+                dump(tmp_path / "out", model_identifiers=[untyped])
 
         def test_refuses_one_whose_type_has_no_sidebar_icon(self, tmp_path):
             with pytest.raises(SystemExit, match=r"^no sidebar icon in .*: Watch7,1$"):
