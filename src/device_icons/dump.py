@@ -7,6 +7,7 @@ import os
 import shutil
 import sys
 import tempfile
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -100,6 +101,15 @@ def layout(placements: dict[str, Placement], resolved: dict[str, str | None]) ->
     return laid
 
 
+def declared(preferred: dict[str, str], declarations: Iterable[str]) -> dict[str, str | None]:
+    """Return each model identifier's preferred type identifier as declared, or None where no declaration matches.
+
+    Type identifiers are case-insensitive: LaunchServices returns them lowercased, the bundle declares some with capitals.
+    """
+    by_lower = {name.lower(): name for name in declarations}
+    return {model_identifier: by_lower.get(winner.lower()) for model_identifier, winner in preferred.items()}
+
+
 def markdown(rows: list[Row]) -> str:
     """Return index.md: a lead sentence and a table with a row per model identifier."""
     lines = [
@@ -160,13 +170,12 @@ def dump(out: Path, type_identifiers: list[str] | None = None) -> str:
     if type_identifiers and (unknown := [name for name in type_identifiers if name not in declarations]):
         sys.exit(f"not declared in {coretypes.BUNDLE}: {', '.join(unknown)}")
     model_identifiers = sorted({name for declaration in declarations.values() for name in declaration.model_identifiers})
-    preferred = launchservices.preferred_type_identifiers(model_identifiers)
+    resolved = declared(launchservices.preferred_type_identifiers(model_identifiers), declarations)
     if type_identifiers:
         chosen = set(type_identifiers)
-        resolved: dict[str, str | None] = {name: winner for name, winner in preferred.items() if winner in chosen}
+        resolved = {name: winner for name, winner in resolved.items() if winner in chosen}
     else:
-        chosen = {winner for winner in preferred.values() if winner in declarations}
-        resolved = {name: (winner if winner in declarations else None) for name, winner in preferred.items()}
+        chosen = {winner for winner in resolved.values() if winner is not None}
     with tempfile.TemporaryDirectory() as tmp:
         placements = _placements({name: coretypes.inherit(declarations[name], declarations) for name in chosen}, search, Path(tmp))
         if type_identifiers:

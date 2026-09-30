@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from device_icons.coretypes import BUNDLE
-from device_icons.dump import DROPPED, Layout, Placement, Row, clear, dump, layout, markdown, write
+from device_icons.dump import DROPPED, Layout, Placement, Row, clear, declared, dump, layout, markdown, write
 
 class TestLayout:
     def test_groups_the_icons_under_their_sidebar_icon(self):
@@ -112,6 +112,18 @@ class TestLayout:
             result = layout({}, {"b": None, "a": None})
 
             assert result.dropped["no type"] == ["a", "b"]
+
+
+class TestDeclared:
+    def test_maps_a_preferred_type_identifier_onto_the_declared_one_ignoring_case(self):
+        result = declared({"J120AP": "com.apple.ipad-pro-a1670-1"}, ["com.apple.ipad-pro-A1670-1"])
+
+        assert result == {"J120AP": "com.apple.ipad-pro-A1670-1"}
+
+    def test_maps_an_undeclared_type_identifier_onto_none(self):
+        result = declared({"Foo1,1": "dyn.age4d4vxtr62z2pbv"}, ["com.apple.mac"])
+
+        assert result == {"Foo1,1": None}
 
 
 class TestMarkdown:

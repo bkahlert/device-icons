@@ -39,7 +39,7 @@ through, one row per model identifier with its type identifier, kind, icon, and 
     }
   },
   "dropped": {
-    "no type": ["AppleDisplay18,2", "J120AP"],
+    "no type": ["AppleDisplay18,2", "AppleDisplay2,1"],
     "no icon": [],
     "no sidebar icon": ["AirPods1,1", "AppleTV1,1", "Watch8,2"]
   }
@@ -138,8 +138,8 @@ output use them as written here, or the short form given, as snake_case where th
 | Term                      | Example                                | Meaning                                                                                                                                                                                                                                              |
 | ------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Model identifier          | `MacPro7,1`                            | What About This Mac shows and `sysctl hw.model` prints. In `CoreTypes.bundle` a tag of the tag class `com.apple.device-model-code`; in a `_device-info._tcp` TXT record the value of `model`. May carry an enclosure colour: `MacPro7,1@ECOLOR=226,226,224`. |
-| Board name                | `J120AP`                               | What `sysctl hw.target` prints. `MobileDevices.bundle` declares board names as model identifiers of iPhones and iPads; LaunchServices does not resolve them.                                                                                      |
-| Type identifier           | `com.apple.macpro-2019`                | A Uniform Type Identifier (UTI), the `UTTypeIdentifier` of a type declaration. Reverse-DNS like a bundle identifier, but a different thing. Short form: type.                                                                                         |
+| Board name                | `J120AP`                               | What `sysctl hw.target` prints. `MobileDevices.bundle` declares board names as model identifiers of iPhones and iPads, and LaunchServices resolves them like any other tag.                                                                          |
+| Type identifier           | `com.apple.macpro-2019`                | A Uniform Type Identifier (UTI), the `UTTypeIdentifier` of a type declaration. Reverse-DNS like a bundle identifier, but a different thing, and case-insensitive: LaunchServices returns `com.apple.ipad-pro-a1670-1` for the declared `com.apple.ipad-pro-A1670-1`. Short form: type. |
 | Type declaration          |                                        | One entry of `UTExportedTypeDeclarations` in a bundle's `Info.plist`.                                                                                                                                                                                  |
 | Tag class, tag            | `com.apple.device-model-code`, `MacPro7,1` | `UTTypeTagSpecification` maps tag classes to the tags a type claims. Other tag classes are `public.filename-extension` and `public.mime-type`.                                                                                                     |
 | Conforms to               | `com.apple.macpro`, `com.apple.mac.tower` | `UTTypeConformsTo`: the parent types. A missing icon, sidebar icon, or kind is inherited from the nearest parent that has one.                                                                                                                         |
