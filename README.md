@@ -1,8 +1,13 @@
-# Device Icons <img src="docs/public.generic-pc.png" alt="The PC icon Finder draws for a host without a model identifier" height="32"> [![CI](https://github.com/bkahlert/device-icons/actions/workflows/ci.yml/badge.svg)](https://github.com/bkahlert/device-icons/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/bkahlert/device-icons?color=69B745&label=Release&logo=GitHub&logoColor=fff)](https://github.com/bkahlert/device-icons/releases/latest) [![License](https://img.shields.io/github/license/bkahlert/device-icons?color=29ABE2&label=License)](https://github.com/bkahlert/device-icons/blob/main/LICENSE) [![Buy Me A Coffee](https://img.shields.io/static/v1?label=&message=%E2%98%95%20Buy%20Me%20A%20Coffee&color=FFDD00)](https://www.buymeacoffee.com/bkahlert)
+<p align="center">
+  <img src="docs/public.generic-pc.png" alt="The PC icon Finder draws for a host without a model identifier" height="192">
+</p>
 
-Any host on your network can show up in Finder with the icon of an Apple device. A Raspberry Pi or a NAS will do. The
-host announces itself over Bonjour, and its `_device-info._tcp` record carries a `model` value. Finder draws the icon
-for that model: `model=MacPro7,1` gives the 2019 Mac Pro tower.
+# Device Icons [![CI](https://github.com/bkahlert/device-icons/actions/workflows/ci.yml/badge.svg)](https://github.com/bkahlert/device-icons/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/bkahlert/device-icons?color=69B745&label=Release&logo=GitHub&logoColor=fff)](https://github.com/bkahlert/device-icons/releases/latest) [![License](https://img.shields.io/github/license/bkahlert/device-icons?color=29ABE2&label=License)](https://github.com/bkahlert/device-icons/blob/main/LICENSE) [![Buy Me A Coffee](https://img.shields.io/static/v1?label=&message=%E2%98%95%20Buy%20Me%20A%20Coffee&color=FFDD00)](https://www.buymeacoffee.com/bkahlert)
+
+Any host on your network can show up in Finder with the icon of an Apple device. A Raspberry Pi or a NAS will do.
+
+The host announces itself over Bonjour, and its `_device-info._tcp` record carries a `model` value. Finder draws the
+icon for that model. For example, `model=MacPro7,1` gives the 2019 Mac Pro tower.
 
 Two commands help you choose a model identifier:
 
@@ -77,9 +82,10 @@ then writes that type's icon and sidebar icon, grouped by sidebar icon:
 | `index.json`                      | `sidebars` lists each sidebar icon, its icons, and their type and model identifiers; `dropped` lists the model identifiers left out, by reason |
 | `README.md`                       | the same data as a table, one row per model identifier: type identifier, Kind, icon, sidebar icon                 |
 
-The dump goes to `out/`, or to the directory you name, and opens in Finder. `dump` creates the directory if needed. If
-it already holds an earlier dump, `dump` replaces it. Anything else in it makes `dump` stop, so it never deletes your
-files. It recognises an earlier dump by its file names and the first line of its `README.md`.
+The dump goes to `out/`, or to the directory you name, and opens in Finder. `dump` creates the directory if needed.
+
+If the directory already holds an earlier dump, `dump` replaces it. Anything else in it makes `dump` stop, so it never
+deletes your files. It recognises an earlier dump by its file names and the first line of its `README.md`.
 
 ### Pick an icon
 
@@ -148,8 +154,10 @@ uv run device-icons preview MacPro7,1
 ```
 
 Finder's Network view opens. Within a few seconds a device named `MacPro7,1` appears, with the icon that identifier
-produces, as pictured above. `preview` keeps the device there until you press Ctrl-C, it receives a termination signal,
-or one of its registrations ends. Then it unregisters.
+produces, as pictured above.
+
+`preview` keeps the device there until you press Ctrl-C, it receives a termination signal, or one of its registrations
+ends. Then it unregisters.
 
 To compare several at once:
 
