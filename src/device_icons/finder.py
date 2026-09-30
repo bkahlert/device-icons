@@ -1,4 +1,4 @@
-"""Folder icons, set through AppKit as pasting an image into Finder's Get Info does."""
+"""Finder: folder icons, set through AppKit as pasting an image into Get Info does, and opening a folder or view."""
 
 from __future__ import annotations
 
@@ -48,3 +48,11 @@ def set_folder_icons(icons: dict[Path, Path]) -> list[Path]:
     out = subprocess.run(["osascript", "-l", "JavaScript", "-e", SET_FOLDER_ICONS, *jobs], check=True, capture_output=True, text=True).stdout
     failed = {line.split("\t")[1] for line in out.splitlines() if line.startswith("failed")}
     return [folder for folder in icons if str(folder.resolve()) in failed]
+
+
+def show(path: Path) -> None:
+    """Open the path in Finder through open(1): a folder as a window.
+
+    A failure is reported by open on stderr and otherwise ignored.
+    """
+    subprocess.run(["open", str(path)])

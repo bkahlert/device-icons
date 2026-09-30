@@ -4,8 +4,8 @@ Finder draws a network device with the icon of the Apple device its `_device-inf
 gives the 2019 Mac Pro tower. This tool dumps every icon macOS knows for such a model identifier, grouped so one can be
 picked by eye in Finder, and previews a model identifier in Finder's Network view without owning the device.
 
-macOS only: the icons live in `CoreTypes.bundle`, and `iconutil`, `osascript`, and `dns-sd` do the work no Python
-module does. Needs [uv](https://docs.astral.sh/uv/); the runtime is the standard library.
+macOS only: the icons live in `CoreTypes.bundle`, and `iconutil`, `osascript`, `open`, and `dns-sd` do the work no
+Python module does. Needs [uv](https://docs.astral.sh/uv/); the runtime is the standard library.
 
 ## Dump
 
@@ -13,6 +13,7 @@ module does. Needs [uv](https://docs.astral.sh/uv/); the runtime is the standard
 uv run device-icons dump                                        # into out/
 uv run device-icons dump ~/Desktop/device-icons
 uv run device-icons dump --type com.apple.macpro-2019 --type com.apple.xserve-xeon docs/icons
+uv run device-icons dump --no-open
 ```
 
 `dump` reads every model identifier declared in `CoreTypes.bundle`, asks LaunchServices which type each resolves to, takes
@@ -55,12 +56,13 @@ chosen an icon, its model identifiers are in `index.json`:
 }
 ```
 
-The output directory is emptied first, but only when it is missing, empty, or holds an earlier dump.
+The output directory is emptied first, but only when it is missing, empty, or holds an earlier dump. Once written, it
+opens in Finder; `--no-open` skips that.
 
 From another project, without a checkout:
 
 ```bash
-uvx --from git+https://github.com/bkahlert/device-icons device-icons dump --type com.apple.macpro-2019 out/
+uvx --from git+https://github.com/bkahlert/device-icons device-icons dump --no-open --type com.apple.macpro-2019 out/
 ```
 
 ## Preview
@@ -134,8 +136,8 @@ uv run device-icons --help
 ```
 
 Layout: `src/device_icons/` is the package, `tests/` the tests. Logic that needs no macOS, such as reading type
-declarations and building the index, is tested on fixtures, and `dns-sd` is stood in for by a fake; the parts that call
-`iconutil` or `osascript` are tested on macOS only.
+declarations and building the index, is tested on fixtures, and `dns-sd` and `open` are stood in for by fakes; the
+parts that call `iconutil` or `osascript` are tested on macOS only.
 
 ## Contributing
 

@@ -20,6 +20,17 @@ class TestParser:
             assert result.type_identifiers == ["com.apple.macpro-2019", "com.apple.xserve-xeon"]
             assert result.out == Path("docs/icons")
 
+        def test_opens_the_output_directory_by_default(self):
+            result = parser().parse_args(["dump"])
+
+            assert result.open is True
+
+        class TestNoOpen:
+            def test_turns_opening_off(self):
+                result = parser().parse_args(["dump", "--no-open"])
+
+                assert result.open is False
+
     class TestPreview:
         def test_collects_the_model_identifiers_and_the_name(self):
             result = parser().parse_args(["preview", "--name", "Rack", "MacPro7,1@ECOLOR=226,226,224"])
@@ -63,7 +74,8 @@ class TestMain:
 
     @pytest.mark.macos
     class TestDump:
-        def test_writes_the_dump_and_prints_the_summary(self, tmp_path, capsys):
+        def test_writes_the_dump_and_prints_the_summary(self, tmp_path, capsys, fake_command):
+            fake_command("open")
             out = tmp_path / "out"
 
             result = main(["dump", "--type", "com.apple.xserve-xeon", str(out)])
@@ -71,4 +83,20 @@ class TestMain:
             assert result == 0
             assert re.match(r"\d+ model identifiers: \d+ placed under 1 sidebar icons and 1 icons in ", capsys.readouterr().out)
             assert "SidebarXserve" in json.loads((out / "index.json").read_text())["sidebars"]
+
+        def test_opens_the_output_directory_in_finder(self, tmp_path, fake_command):
+            opening = fake_command("open")
+            out = tmp_path / "out"
+
+            main(["dump", "--type", "com.apple.xserve-xeon", str(out)])
+
+            assert [arguments for _, arguments in opening.calls()] == [str(out)]
+
+        class TestNoOpen:
+            def test_leaves_finder_alone(self, tmp_path, fake_command):
+                opening = fake_command("open")
+
+                main(["dump", "--no-open", "--type", "com.apple.xserve-xeon", str(tmp_path / "out")])
+
+                assert not opening.log.exists()
 

@@ -1,7 +1,9 @@
+from pathlib import Path
+
 import pytest
 
 from device_icons.coretypes import BUNDLE
-from device_icons.finder import set_folder_icons
+from device_icons.finder import set_folder_icons, show
 from device_icons.icns import iconset
 
 
@@ -31,3 +33,12 @@ class TestSetFolderIcons:
             result = set_folder_icons({})
 
             assert result == []
+
+
+class TestShow:
+    def test_opens_the_path_with_open(self, fake_command):
+        opening = fake_command("open")
+
+        show(Path("out/device-icons"))
+
+        assert [arguments for _, arguments in opening.calls()] == ["out/device-icons"]
