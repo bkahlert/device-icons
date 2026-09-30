@@ -4,20 +4,42 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
+
+from device_icons import dump, preview
 
 
 def parser() -> argparse.ArgumentParser:
     """Return the argument parser with the dump and preview commands."""
-    root = argparse.ArgumentParser(prog="device-icons", description=__doc__)
+    root = argparse.ArgumentParser(prog="device-icons", description="The Finder icons of Apple device types.")
     commands = root.add_subparsers(dest="command", required=True)
-    commands.add_parser("dump", help="write the icons and sidebar icons of device types")
-    commands.add_parser("preview", help="show model identifiers as devices in Finder's Network view")
+    dumping = commands.add_parser("dump", help="write the icon and sidebar icon of every device type, grouped for picking in Finder")
+    dumping.add_argument("out", nargs="?", type=Path, default=Path("out"), help="output directory, emptied first (default: out)")
+    dumping.add_argument(
+        "--type",
+        dest="type_identifiers",
+        metavar="TYPE_IDENTIFIER",
+        action="append",
+        help="dump only this type identifier, with the model identifiers that resolve to it; repeatable",
+    )
+    previewing = commands.add_parser("preview", help="show model identifiers as devices in Finder's Network view until Ctrl-C")
+    previewing.add_argument("model_identifiers", metavar="MODEL_IDENTIFIER", nargs="+", help="a model identifier, such as MacPro7,1")
+    previewing.add_argument("--name", help="service instance name Finder shows (default: the model identifier)")
     return root
 
 
 def main(argv: list[str] | None = None) -> int:
     """Run the command line; return the exit code."""
-    parser().parse_args(argv)
+    arguments = parser().parse_args(argv)
+    if sys.platform != "darwin":
+        sys.exit("macOS only: needs CoreTypes.bundle, iconutil, osascript, and dns-sd")
+    if arguments.command == "dump":
+        print(dump.dump(arguments.out, arguments.type_identifiers))
+    else:
+        try:
+            preview.preview(arguments.model_identifiers, arguments.name)
+        except ValueError as error:
+            parser().error(str(error))
     return 0
 
 
