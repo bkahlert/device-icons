@@ -50,14 +50,14 @@ def layout(placements: dict[str, Placement], resolved: dict[str, str | None]) ->
         if placement.icon is None or placement.sidebar_icon is None:
             continue
         icon, sidebar = placement.icon.parent.stem, placement.sidebar_icon.parent.stem
-        icon_file, sidebar_file = Path("icons") / f"{icon}.png", Path("sidebar") / f"{sidebar}.png"
+        icon_target, sidebar_target = Path("icons") / f"{icon}.png", Path("sidebar") / f"{sidebar}.png"
         folder = Path("by-sidebar") / sidebar
-        laid.files.setdefault(icon_file, placement.icon)
-        laid.files.setdefault(sidebar_file, placement.sidebar_icon)
-        laid.links.setdefault(folder / f"{icon}.png", icon_file)
-        laid.folders.setdefault(folder, sidebar_file)
-        group = laid.sidebars.setdefault(sidebar, {"sidebar_icon": sidebar_file.as_posix(), "icons": {}})
-        entry = group["icons"].setdefault(icon, {"icon": icon_file.as_posix(), "type_identifiers": [], "model_identifiers": []})
+        laid.files.setdefault(icon_target, placement.icon)
+        laid.files.setdefault(sidebar_target, placement.sidebar_icon)
+        laid.links.setdefault(folder / f"{icon}.png", icon_target)
+        laid.folders.setdefault(folder, sidebar_target)
+        group = laid.sidebars.setdefault(sidebar, {"sidebar_icon": sidebar_target.as_posix(), "icons": {}})
+        entry = group["icons"].setdefault(icon, {"icon": icon_target.as_posix(), "type_identifiers": [], "model_identifiers": []})
         entry["type_identifiers"].append(placement.type_identifier)
     entries = {
         type_identifier: entry
