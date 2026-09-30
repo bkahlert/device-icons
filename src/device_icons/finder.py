@@ -5,6 +5,9 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+# What Go > Network (⇧⌘K) opens; /Network is gone from macOS.
+NETWORK_VIEW = Path("/System/Library/CoreServices/Finder.app/Contents/Applications/Network.app")
+
 # JavaScript for Automation. Sidebar icons are black template images, so each is tinted grey first to show in the
 # dark and the light appearance alike.
 SET_FOLDER_ICONS = r"""
@@ -51,7 +54,7 @@ def set_folder_icons(icons: dict[Path, Path]) -> list[Path]:
 
 
 def show(path: Path) -> None:
-    """Open the path in Finder through open(1): a folder as a window.
+    """Open the path in Finder through open(1): a folder as a window, NETWORK_VIEW as the Network view.
 
     A failure is reported by open on stderr and otherwise ignored.
     """

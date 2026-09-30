@@ -75,9 +75,9 @@ uv run device-icons preview --name "Rack" MacPro7,1@ECOLOR=226,226,224
 
 `preview` registers, for each model identifier, two proxy records from the Mac itself: an `_smb._tcp` service and a
 `_device-info._tcp` service carrying `model=<identifier>`, both under the same service instance name, which defaults to the
-identifier. Since Finder pairs the two records by that name, `--name` takes exactly one model identifier. Open Network in Finder (Go, Network, or ⇧⌘K); the device appears within a few seconds, drawn with the icon
-the identifier produces. `preview` blocks until Ctrl-C, a termination signal, or one of the registrations ending, then
-unregisters.
+identifier. Since Finder pairs the two records by that name, `--name` takes exactly one model identifier. Finder's
+Network view opens, unless `--no-open`; the device appears there within a few seconds, drawn with the icon the identifier
+produces. `preview` blocks until Ctrl-C, a termination signal, or one of the registrations ending, then unregisters.
 
 The sidebar icon cannot be previewed this way. Finder shows it only under Locations, for a server it has mounted, and
 the previewed host does not exist.
@@ -120,6 +120,7 @@ output use them as written here, or the short form given, as snake_case where th
 | Service instance name     | `MacPro7,1` in `dns-sd -P MacPro7,1 …` | The name of one instance of a service type. Finder pairs the `_device-info._tcp` record with the `_smb._tcp` record by it.                                                                                                                             |
 | TXT record                | `model=MacPro7,1`                      | The key-value pairs of a service instance.                                                                                                                                                                                                             |
 | Proxy registration        | `dns-sd -P`                            | Registering a service on behalf of another host, with its host name and address.                                                                                                                                                                       |
+| Network view              | Go > Network, ⇧⌘K                      | Finder's list of the servers found on the local network. `open` on the `Network.app` inside `Finder.app/Contents/Applications` shows it; the `/Network` folder of earlier macOS is gone.                                                              |
 
 ## Not yet
 

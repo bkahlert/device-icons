@@ -1,10 +1,13 @@
 import json
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
 from device_icons.cli import main, parser
+from device_icons.finder import NETWORK_VIEW
 
 
 class TestParser:
@@ -48,6 +51,17 @@ class TestParser:
 
             assert exit.value.code == 2
 
+        def test_opens_the_network_view_by_default(self):
+            result = parser().parse_args(["preview", "MacPro7,1"])
+
+            assert result.open is True
+
+        class TestNoOpen:
+            def test_turns_opening_off(self):
+                result = parser().parse_args(["preview", "--no-open", "MacPro7,1"])
+
+                assert result.open is False
+
 
 class TestMain:
     def test_help_exits_zero(self):
@@ -71,6 +85,25 @@ class TestMain:
 
             assert exit.value.code == 2
             assert "exactly one model identifier" in capsys.readouterr().err
+
+        def test_opens_the_network_view_in_finder(self, fake_command):
+            fake_command("dns-sd", then="exit 1")
+            opening = fake_command("open")
+
+            result = preview_as_on_macos("MacPro7,1")
+
+            assert result == 0
+            assert [arguments for _, arguments in opening.calls()] == [str(NETWORK_VIEW)]
+
+        class TestNoOpen:
+            def test_leaves_finder_alone(self, fake_command):
+                fake_command("dns-sd", then="exit 1")
+                opening = fake_command("open")
+
+                result = preview_as_on_macos("--no-open", "MacPro7,1")
+
+                assert result == 0
+                assert not opening.log.exists()
 
     @pytest.mark.macos
     class TestDump:
@@ -100,3 +133,8 @@ class TestMain:
 
                 assert not opening.log.exists()
 
+
+
+def preview_as_on_macos(*arguments: str) -> int:
+    script = f"import sys; sys.platform = 'darwin'; from device_icons.cli import main; sys.exit(main(['preview', *{list(arguments)!r}]))"
+    return subprocess.run([sys.executable, "-c", script], timeout=5).returncode

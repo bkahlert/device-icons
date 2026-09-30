@@ -47,9 +47,9 @@ def stop(processes: list[subprocess.Popen]) -> None:
         process.wait()
 
 
-def preview(model_identifiers: list[str], name: str | None = None) -> None:
-    """Register the proxies for the model identifiers and keep them until Ctrl-C, SIGTERM, or one of them ending."""
-    processes = start(registrations(model_identifiers, name))
+def preview(commands: list[list[str]]) -> None:
+    """Run the registrations and keep them until Ctrl-C, SIGTERM, or one of them ending."""
+    processes = start(commands)
     previous = signal.signal(signal.SIGTERM, _interrupt)
     try:
         while all(process.poll() is None for process in processes):

@@ -58,7 +58,7 @@ class TestPreview:
     @pytest.mark.parametrize("signal_number", [signal.SIGINT, signal.SIGTERM], ids=["SIGINT", "SIGTERM"])
     def test_unregisters_when_signalled(self, fake_command, signal_number):
         dns_sd = fake_command("dns-sd", then="exec sleep 30")
-        process = subprocess.Popen([sys.executable, "-c", "from device_icons.preview import preview; preview(['MacPro7,1'])"])
+        process = subprocess.Popen([sys.executable, "-c", "from device_icons.preview import *; preview(registrations(['MacPro7,1']))"])
         registration_pids = [pid for pid, _ in dns_sd.calls(at_least=2)]
 
         process.send_signal(signal_number)
@@ -69,7 +69,7 @@ class TestPreview:
 
     def test_returns_once_a_registration_ends(self, fake_command):
         fake_command("dns-sd", then="exit 1")
-        process = subprocess.Popen([sys.executable, "-c", "from device_icons.preview import preview; preview(['MacPro7,1'])"])
+        process = subprocess.Popen([sys.executable, "-c", "from device_icons.preview import *; preview(registrations(['MacPro7,1']))"])
 
         result = process.wait(timeout=5)
 
