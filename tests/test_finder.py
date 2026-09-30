@@ -7,8 +7,8 @@ from device_icons.finder import set_folder_icons, show
 from device_icons.icns import iconset
 
 
-@pytest.mark.macos
 class TestSetFolderIcons:
+    @pytest.mark.macos
     def test_gives_each_folder_the_image_as_its_icon(self, tmp_path):
         sidebar = iconset(BUNDLE / "Contents" / "Resources" / "SidebarMacPro.icns", tmp_path) / "icon_32x32@2x.png"
         folders = [tmp_path / "one", tmp_path / "two"]
@@ -20,6 +20,7 @@ class TestSetFolderIcons:
         assert result == []
         assert all((folder / "Icon\r").exists() for folder in folders)
 
+    @pytest.mark.macos
     def test_reports_a_folder_it_could_not_decorate(self, tmp_path):
         sidebar = iconset(BUNDLE / "Contents" / "Resources" / "SidebarMacPro.icns", tmp_path) / "icon_32x32@2x.png"
         missing = tmp_path / "missing"

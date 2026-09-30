@@ -6,12 +6,6 @@ import pytest
 from device_icons.coretypes import BUNDLE
 from device_icons.dump import DROPPED, Layout, Placement, clear, dump, layout, write
 
-XSERVE = Path("/w/com.apple.xserve.iconset/icon_512x512@2x.png")
-MACPRO = Path("/w/com.apple.macpro-2019.iconset/icon_512x512@2x.png")
-MACPRO_EMBEDDED_SIDEBAR = Path("/w/com.apple.macpro-2019.iconset/template_32x32@2x.png")
-SIDEBAR_MACPRO = Path("/w/SidebarMacPro.iconset/icon_32x32@2x.png")
-
-
 class TestLayout:
     def test_groups_the_icons_under_their_sidebar_icon(self):
         placements = {
@@ -116,7 +110,8 @@ class TestClear:
 
         clear(out)
 
-        assert out.is_dir() and not any(out.iterdir())
+        assert out.is_dir()
+        assert not any(out.iterdir())
 
     def test_accepts_an_empty_directory(self, tmp_path):
         clear(tmp_path)
@@ -141,7 +136,8 @@ class TestClear:
         with pytest.raises(SystemExit, match="not an earlier dump"):
             clear(tmp_path)
 
-        assert (tmp_path / "thesis.tex").is_file() and (tmp_path / "index.json").is_file()
+        assert (tmp_path / "thesis.tex").is_file()
+        assert (tmp_path / "index.json").is_file()
 
     def test_refuses_a_file(self, tmp_path):
         file = tmp_path / "out"
@@ -172,7 +168,9 @@ class TestWrite:
         link = out / "by-sidebar" / "SidebarMacPro" / "com.apple.xserve.png"
         assert (out / "icons" / "com.apple.xserve.png").read_bytes() == b"icon"
         assert (out / "sidebar" / "SidebarMacPro.png").read_bytes() == b"sidebar"
-        assert link.is_symlink() and link.readlink() == Path("../../icons/com.apple.xserve.png") and link.read_bytes() == b"icon"
+        assert link.is_symlink()
+        assert link.readlink() == Path("../../icons/com.apple.xserve.png")
+        assert link.read_bytes() == b"icon"
         assert json.loads((out / "index.json").read_text()) == {"sidebars": laid.sidebars, "dropped": laid.dropped}
 
 
@@ -200,3 +198,9 @@ class TestDump:
     def test_refuses_a_type_without_sidebar_icon_naming_what_is_missing(self, tmp_path):
         with pytest.raises(SystemExit, match=r"^no sidebar icon in .*: com\.apple\.device$"):
             dump(tmp_path / "out", ["com.apple.device"])
+
+
+XSERVE = Path("/w/com.apple.xserve.iconset/icon_512x512@2x.png")
+MACPRO = Path("/w/com.apple.macpro-2019.iconset/icon_512x512@2x.png")
+MACPRO_EMBEDDED_SIDEBAR = Path("/w/com.apple.macpro-2019.iconset/template_32x32@2x.png")
+SIDEBAR_MACPRO = Path("/w/SidebarMacPro.iconset/icon_32x32@2x.png")
