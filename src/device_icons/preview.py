@@ -49,9 +49,10 @@ def stop(processes: list[subprocess.Popen]) -> None:
 
 def preview(commands: list[list[str]]) -> None:
     """Run the registrations and keep them until Ctrl-C, SIGTERM, or one of them ending."""
-    processes = start(commands)
+    processes: list[subprocess.Popen] = []
     previous = signal.signal(signal.SIGTERM, _interrupt)
     try:
+        processes = start(commands)
         while all(process.poll() is None for process in processes):
             time.sleep(0.5)
     except KeyboardInterrupt:
