@@ -1,9 +1,10 @@
 # Device Icons [![CI](https://github.com/bkahlert/device-icons/actions/workflows/ci.yml/badge.svg)](https://github.com/bkahlert/device-icons/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/bkahlert/device-icons?color=69B745&label=Release&logo=GitHub&logoColor=fff)](https://github.com/bkahlert/device-icons/releases/latest) [![License](https://img.shields.io/github/license/bkahlert/device-icons?color=29ABE2&label=License)](https://github.com/bkahlert/device-icons/blob/main/LICENSE) [![Buy Me A Coffee](https://img.shields.io/static/v1?label=&message=%E2%98%95%20Buy%20Me%20A%20Coffee&color=FFDD00)](https://www.buymeacoffee.com/bkahlert)
 
-Finder draws a network device with the icon of the Apple device its `_device-info._tcp` record names: `model=MacPro7,1`
-gives the 2019 Mac Pro tower. Two commands work with that:
+Any host that announces itself over Bonjour, a Raspberry Pi say, can show up in Finder wearing the icon of an Apple
+device. Finder draws the model its `_device-info._tcp` record names: `model=MacPro7,1` is the 2019 Mac Pro tower. Two
+commands help pick one:
 
-- [`dump`](#dump) writes every icon macOS knows for such a model identifier, grouped so one can be picked by eye in
+- [`dump`](#dump) writes every icon macOS has for such a model identifier, grouped so one can be picked by eye in
   Finder.
 - [`preview`](#preview) shows a model identifier in Finder's Network view without owning the device.
 
@@ -23,6 +24,8 @@ hosts of the home network edited out with ChatGPT Astra, one of them kept as the
 -->
 
 ## Dump
+
+Eleven of the icons, laid out by `dump --horizontal` for this README:
 
 | Model identifier | `AirPort4` | `AirPort5` | `AirPort7,120` | `Macmini8,1` | `Macmini9,1` | `MacPro5,1` | `MacPro6,1` | `AirPort6` | `Xserve3,1` | `MacPro7,1`<br/>`@ECOLOR=`<br/>`225,225,223` | `MacPro7,1`<br/>`@ECOLOR=`<br/>`226,226,224` |
 | --- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
@@ -45,18 +48,31 @@ then pngquant --ext .png --force docs/icons/icons/*.png to keep the repository s
 prefixed with docs/icons/ since this file sits at the repository root.
 -->
 
-A device that announces itself over Bonjour, a Raspberry Pi say, can wear any icon macOS has for an Apple device. To
-pick one, dump them all:
+`dump` reads every model identifier declared in `CoreTypes.bundle`, asks LaunchServices which type each resolves to,
+and writes that type's icon and sidebar icon, grouped by sidebar icon:
 
 ```bash
 uv run device-icons dump
 ```
 
-The dump lands in `out/`, which opens in Finder. Its `by-sidebar/` holds one folder per sidebar icon, each wearing that
-icon; inside are the icons that come with it. Having picked one, `index.json` lists the model identifiers that produce
-it, and any of them, announced as `model=…`, makes Finder draw it. `README.md` holds the same as a table to scroll
-through, one row per model identifier with its type identifier, kind, icon, and sidebar icon, grouped by sidebar icon
-and sorted by model identifier within; GitHub renders it when the dump is browsed there:
+| Path                              | Content                                                                                                      |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `icons/<icon>.png`                | the largest image of each icon file, written once                                                            |
+| `sidebar/<sidebar>.png`           | each sidebar icon at 64 px, written once, named after its `Sidebar….icns` or, when embedded, after its icon file |
+| `by-sidebar/<sidebar>/`           | one folder per sidebar icon, wearing it as its folder icon                                                   |
+| `by-sidebar/<sidebar>/<icon>.png` | a link to `icons/<icon>.png` for every icon that comes with that sidebar icon                                |
+| `index.json`                      | `sidebars`: sidebar icon, icon, then type and model identifiers; `dropped`: model identifiers left out, by reason |
+| `README.md`                       | the same as a table, one row per model identifier: type identifier, Kind, icon, sidebar icon                 |
+
+The dump lands in `out/`, or in the directory given, and opens in Finder. The directory is emptied first, but only when
+it is missing, empty, or holds an earlier dump, recognised by its files and the first sentence of its `README.md`;
+anything else stops `dump`.
+
+### Pick an icon
+
+Browse `by-sidebar/` in Finder: each folder wears a sidebar icon and holds the icons that come with it. Having picked
+one, `index.json` names the model identifiers that produce it, and any of them, announced as `model=…`, makes Finder
+draw it:
 
 ```json
 {
@@ -71,33 +87,20 @@ and sorted by model identifier within; GitHub renders it when the dump is browse
         }
       }
     }
-  },
-  "dropped": {
-    "no type": ["AppleDisplay18,2", "AppleDisplay2,1"],
-    "no icon": [],
-    "no sidebar icon": ["AirPods1,1", "AppleTV1,1", "Watch8,2"]
   }
 }
 ```
 
-Another directory:
+`dropped`, next to `sidebars`, lists what was left out and why: the displays, whose types are no devices, and the model
+identifiers whose types have no sidebar icon, Apple TV, Watch, and AirPods among them.
 
-```bash
-uv run device-icons dump ~/Desktop/device-icons
-```
+### Dump a few
 
-It is emptied first, but only when it is missing, empty, or holds an earlier dump. A `README.md` counts as an earlier
-dump's only when it starts with the dump's first sentence; any other stops `dump`.
-
-Only some model identifiers, a project's devices say, and without Finder:
+A project's devices only, into its docs, without opening Finder:
 
 ```bash
 uv run device-icons dump --no-open --model MacPro7,1 --model Xserve3,1 docs/icons
 ```
-
-`--model` restricts the dump to the given model identifiers and the types they resolve to. One that is not declared,
-or resolves to no type, or whose type has no icon or no sidebar icon, ends `dump` before anything is written, with a
-message naming it and what is missing.
 
 Or whole types:
 
@@ -105,48 +108,37 @@ Or whole types:
 uv run device-icons dump --no-open --type com.apple.macpro-2019 --type com.apple.xserve-xeon docs/icons
 ```
 
-`--type` restricts the dump to the given type identifiers and the model identifiers that resolve to them, and refuses
-the same way. `--type` and `--model` exclude each other; the layout stays the same for both. `--no-open` skips opening
-the output directory in Finder.
+`--model` takes the given model identifiers and the types they resolve to; `--type` takes the given type identifiers and
+the model identifiers that resolve to them. The two exclude each other. An identifier that is not declared, resolves to
+no type, or whose type has no icon or no sidebar icon ends `dump` before anything is written, with a message naming it
+and what is missing.
 
-For the few model identifiers of a project's README, a column per model identifier:
+### A table for a README
+
+`--horizontal` turns `README.md`'s table: a column per model identifier, with type identifier, Kind, icon, and sidebar
+icon as the rows, as at the top of this section:
 
 ```bash
 uv run device-icons dump --horizontal --no-open --model MacPro7,1 --model Xserve3,1 docs/icons
 ```
 
-`--horizontal` turns `README.md`'s table: the model identifiers head the columns, and type identifier, kind, icon, and
-sidebar icon are the rows, as at the top of this section.
-
 From another project, without a checkout:
 
 ```bash
-uvx --from git+https://github.com/bkahlert/device-icons device-icons dump --no-open --type com.apple.macpro-2019 docs/icons
+uvx --from git+https://github.com/bkahlert/device-icons device-icons dump --horizontal --no-open --model MacPro7,1 docs/icons
 ```
-
-To do all this, `dump` reads every model identifier declared in `CoreTypes.bundle`, asks LaunchServices which type each
-resolves to, takes that type's icon and sidebar icon, and writes:
-
-| Path                             | Content                                                                             |
-| -------------------------------- | ----------------------------------------------------------------------------------- |
-| `icons/<icon file>.png`          | the largest image of each icon file, written once                                   |
-| `sidebar/<sidebar>.png`          | each 64 px sidebar icon, written once, named after its `Sidebar….icns` or, when embedded, after its icon file |
-| `by-sidebar/<sidebar>/`          | one folder per sidebar icon, wearing it as its folder icon                          |
-| `by-sidebar/<sidebar>/<icon>.png` | a link to `icons/<icon>.png` for every icon that comes with that sidebar icon      |
-| `index.json`                     | `sidebars`: sidebar icon, then icon, then types and model identifiers; `dropped`: model identifiers left out, by reason |
-| `README.md`                      | a Markdown table, one row per placed model identifier, grouped by sidebar icon: type identifier, kind, icon at 128 px, sidebar icon at 32 px; a column per model identifier with `--horizontal` |
 
 ## Preview
 
-To see the icon Finder really draws for a model identifier, without the device:
+To see the icon Finder really draws for a model identifier, without owning the device:
 
 ```bash
 uv run device-icons preview MacPro7,1
 ```
 
-Finder's Network view opens, and within a few seconds a device named `MacPro7,1` appears there, drawn with the icon the
-identifier produces, as pictured above. `preview` keeps it there until Ctrl-C, a termination signal, or one of its registrations ending,
-then unregisters.
+Finder's Network view opens, and within a few seconds a device named `MacPro7,1` appears in it, drawn with the icon the
+identifier produces, as pictured above. `preview` keeps it there until Ctrl-C, a termination signal, or one of its
+registrations ending, then unregisters.
 
 Several at once, to compare:
 
@@ -154,69 +146,18 @@ Several at once, to compare:
 uv run device-icons preview MacPro7,1 Xserve3,1 "Mac14,8@ECOLOR=1"
 ```
 
-Under the name the real device will have:
+Under the name the real device will have, one model identifier at a time, since Finder pairs a device's records by name:
 
 ```bash
 uv run device-icons preview --name "Rack" MacPro7,1@ECOLOR=226,226,224
 ```
 
-`--name` takes exactly one model identifier, since Finder pairs a device's records by that name. `--no-open` leaves
-Finder alone; the view is Go > Network, or ⇧⌘K.
+`--no-open` leaves Finder alone; the view is Go > Network, or ⇧⌘K.
 
-Behind this, `preview` registers for each model identifier two proxy records from the Mac itself: an `_smb._tcp` service
-and a `_device-info._tcp` service carrying `model=<identifier>`, both under the same service instance name, which
-defaults to the identifier.
-
-The sidebar icon cannot be previewed this way. Finder shows it only under Locations, for a server it has mounted, and
+Behind this, `preview` registers two proxy records per model identifier from the Mac itself, an `_smb._tcp` service and
+a `_device-info._tcp` service carrying `model=<identifier>`, under one service instance name that defaults to the
+identifier. The sidebar icon cannot be previewed: Finder shows it only under Locations, for a server it has mounted, and
 the previewed host does not exist.
-
-## How Finder gets from a model identifier to an icon
-
-- The model identifier is a tag of the tag class `com.apple.device-model-code` in a type declaration of `CoreTypes.bundle`
-  or one of the bundles nested in its `Contents/Library`, such as `MobileDevices.bundle`.
-- Model identifiers are not unique: about half are claimed by several type declarations, mostly colour variants of one
-  device. LaunchServices settles which type wins, and Finder asks it the same way `dump` does: the preferred type
-  identifier for the tag, conforming to `public.device`. A model identifier nobody claims resolves to a dynamic `dyn.*`
-  type, and Finder shows a question mark. So does a display's, such as `AppleDisplay2,1`: its type conforms to
-  `public.display`, not `public.device`, which is why the displays are the "no type" rows of a full dump.
-- A type's icon is its icon file; a type without one inherits the nearest along `UTTypeConformsTo`. The sidebar icon
-  comes from one of two places: the `Sidebar….icns` a type names as `_UTTypeTemplateIconFile`, or the `sbtp` chunk
-  newer icon files embed, which `iconutil` unpacks as `template_…` images. `dump` prefers the embedded one; which one
-  Finder prefers when a type has both is not verified.
-- Finder's Network view draws the icon. The sidebar icon appears only under Locations, for a server that is mounted.
-
-## Glossary
-
-The terms are Apple's, verified against the keys in `Info.plist`, the tools' manuals, and what the tools print. Code and
-output use them as written here, or the short form given, as snake_case where the language wants it.
-
-| Term                      | Example                                | Meaning                                                                                                                                                                                                                                              |
-| ------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Model identifier          | `MacPro7,1`                            | What About This Mac shows and `sysctl hw.model` prints. In `CoreTypes.bundle` a tag of the tag class `com.apple.device-model-code`; in a `_device-info._tcp` TXT record the value of `model`. May carry an enclosure colour: `MacPro7,1@ECOLOR=226,226,224`. |
-| Board name                | `J120AP`                               | What `sysctl hw.target` prints. `MobileDevices.bundle` declares board names as model identifiers of iPhones and iPads, and LaunchServices resolves them like any other tag.                                                                          |
-| Type identifier           | `com.apple.macpro-2019`                | A Uniform Type Identifier (UTI), the `UTTypeIdentifier` of a type declaration. Reverse-DNS like a bundle identifier, but a different thing, and case-insensitive: LaunchServices returns `com.apple.ipad-pro-a1670-1` for the declared `com.apple.ipad-pro-A1670-1`. Short form: type. |
-| Type declaration          |                                        | One entry of `UTExportedTypeDeclarations` in a bundle's `Info.plist`.                                                                                                                                                                                  |
-| Tag class, tag            | `com.apple.device-model-code`, `MacPro7,1` | `UTTypeTagSpecification` maps tag classes to the tags a type claims. Other tag classes are `public.filename-extension` and `public.mime-type`.                                                                                                     |
-| Conforms to               | `com.apple.macpro`, `com.apple.mac.tower` | `UTTypeConformsTo`: the parent types. A missing icon or sidebar icon is inherited from the nearest parent that has one; the Kind follows from them too.                                                                                              |
-| Preferred type identifier | `com.apple.macpro-2019` for `MacPro7,1` | The one type identifier LaunchServices returns for a tag several declarations claim, via `UTTypeCreatePreferredIdentifierForTag`. An unclaimed tag gets a dynamic type, `dyn.…`.                                                                     |
-| Bundle, bundle identifier | `CoreTypes.bundle`, `com.apple.coretypes` | A bundle is the directory; its `CFBundleIdentifier` is the bundle identifier. Device types live in `/System/Library/CoreServices/CoreTypes.bundle` and the bundles nested in its `Contents/Library`.                                                |
-| Kind                      | `Mac`, `iPad`, `Time Capsule`          | What Finder's Network view shows in its Kind column: iPhone, iPad, iPod, AirPort Extreme, or Time Capsule for a type that is or conforms to `com.apple.iphone`, `.ipad`, `.ipod`, `.airport`, or `.time-capsule`; Mac for any other model, an Apple TV or Watch too; PC for a host without one. Observed, not documented. |
-| Icon                      | `com.apple.macpro-2019.icns`           | The picture Finder draws for a type. Its icon file, `UTTypeIconFile`, is an `.icns` in the bundle's `Contents/Resources` holding it at several sizes.                                                                                                |
-| Sidebar icon              | `SidebarMacPro.icns`                   | The monochrome icon Finder's sidebar draws under Locations, at 16, 18, 24, and 32 pt, with a selected variant. Comes as the `Sidebar….icns` a type names in `_UTTypeTemplateIconFile`, or embedded in an icon file as its `sbtp` chunk. Short form: sidebar. |
-| Template image            | `sbtp`, `template_32x32@2x.png`        | A monochrome image the system tints, `isTemplate` in AppKit. How a sidebar icon is rendered, not what it is. `iconutil` names embedded sidebar images `template_…`, the selected variant `template_[selected]…`; the icns chunk codes are `icsb` and `sb24` for the sidebar sizes, `sbtp` for an embedded sidebar icon, `slct` for its selected variant. |
-| Iconset                   | `icon_512x512@2x.png`, `template_32x32@2x.png` | The folder `iconutil -c iconset` unpacks an icon file into, one PNG per image, named by point size and scale.                                                                                                                                    |
-| Symbol name               | `macpro.gen3`                          | `UTTypeSymbolName`: the SF Symbol of the type. 55 of the 972 device types declare one.                                                                                                                                                                 |
-| Service type              | `_device-info._tcp`, `_smb._tcp`       | DNS-SD (RFC 6763). `_device-info._tcp` is the one Finder reads `model` from.                                                                                                                                                                          |
-| Service instance name     | `MacPro7,1` in `dns-sd -P MacPro7,1 …` | The name of one instance of a service type. Finder pairs the `_device-info._tcp` record with the `_smb._tcp` record by it.                                                                                                                             |
-| TXT record                | `model=MacPro7,1`                      | The key-value pairs of a service instance.                                                                                                                                                                                                             |
-| Proxy registration        | `dns-sd -P`                            | Registering a service on behalf of another host, with its host name and address.                                                                                                                                                                       |
-| Network view              | Go > Network, ⇧⌘K                      | Finder's list of the servers found on the local network. `open` on the `Network.app` inside `Finder.app/Contents/Applications` shows it; the `/Network` folder of earlier macOS is gone.                                                              |
-
-## Not yet
-
-- SF Symbols: 55 device types name their SF Symbol in `UTTypeSymbolName`. A later `dump` renders these too.
-- Checking the sidebar icon in Finder, and which source Finder prefers, needs a host that can be mounted, that is, a real
-  device announcing the identifier.
 
 ## Development
 
@@ -251,6 +192,51 @@ uv run device-icons --help
 Layout: `src/device_icons/` is the package, `tests/` the tests. Logic that needs no macOS, such as reading type
 declarations and building the index, is tested on fixtures, and `dns-sd` and `open` are stood in for by fakes; the
 parts that call `iconutil` or `osascript` are tested on macOS only.
+
+### Icon lookup
+
+How Finder gets from a model identifier to an icon, and `dump` with it:
+
+- A model identifier is a tag of the tag class `com.apple.device-model-code` in a type declaration of `CoreTypes.bundle`
+  or of a bundle nested in its `Contents/Library`, such as `MobileDevices.bundle`.
+- About half the model identifiers are claimed by several types, mostly colour variants of one device. LaunchServices
+  settles which wins, asked the way Finder asks: the preferred type identifier for the tag, conforming to
+  `public.device`.
+- A model identifier nobody claims resolves to a dynamic `dyn.*` type, and Finder shows a question mark. A display's
+  does too, since its type conforms to `public.display`, not `public.device`. That is why `AppleDisplay2,1` and
+  `AppleDisplay18,2` are the "no type" rows of a full dump.
+- A type's icon is its icon file. A type without one inherits the nearest along `UTTypeConformsTo`.
+- The sidebar icon comes from one of two places: the `Sidebar….icns` a type names as `_UTTypeTemplateIconFile`, or the
+  `sbtp` chunk newer icon files embed, which `iconutil` unpacks as `template_…` images. `dump` prefers the embedded
+  one; which one Finder prefers when a type has both is not verified.
+- Finder's Network view draws the icon. The sidebar icon appears only under Locations, for a server that is mounted.
+
+### Glossary
+
+The terms are Apple's, verified against the keys in `Info.plist`, the tools' manuals, and what the tools print. Code and
+output use them as written here, or the short form given, as snake_case where the language wants it.
+
+| Term                      | Example                                    | Meaning                                                                                                                                                                                                                                                                          |
+| ------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Model identifier          | `MacPro7,1`                                | What About This Mac shows and `sysctl hw.model` prints. In `CoreTypes.bundle` a tag of the tag class `com.apple.device-model-code`, in a `_device-info._tcp` TXT record the value of `model`. May carry an enclosure colour: `MacPro7,1@ECOLOR=226,226,224`.                       |
+| Board name                | `J120AP`                                   | What `sysctl hw.target` prints. `MobileDevices.bundle` declares board names as model identifiers of iPhones and iPads, and LaunchServices resolves them like any other tag.                                                                                                      |
+| Type identifier           | `com.apple.macpro-2019`                    | A Uniform Type Identifier, the `UTTypeIdentifier` of a type declaration. Case-insensitive: LaunchServices returns `com.apple.ipad-pro-a1670-1` for the declared `com.apple.ipad-pro-A1670-1`. Short form: type.                                                                   |
+| Type declaration          |                                            | One entry of `UTExportedTypeDeclarations` in a bundle's `Info.plist`.                                                                                                                                                                                                            |
+| Tag class, tag            | `com.apple.device-model-code`, `MacPro7,1` | `UTTypeTagSpecification` maps tag classes to the tags a type claims. Other tag classes are `public.filename-extension` and `public.mime-type`.                                                                                                                                 |
+| Conforms to               | `com.apple.macpro`, `com.apple.mac.tower`  | `UTTypeConformsTo`, the parent types. Icon, sidebar icon, and Kind come from the nearest parent when a type has none itself.                                                                                                                                                    |
+| Preferred type identifier | `com.apple.macpro-2019` for `MacPro7,1`    | The one type identifier LaunchServices returns for a tag several declarations claim, via `UTTypeCreatePreferredIdentifierForTag`. An unclaimed tag gets a dynamic type, `dyn.…`.                                                                                                 |
+| Bundle, bundle identifier | `CoreTypes.bundle`, `com.apple.coretypes`  | The directory and its `CFBundleIdentifier`. Device types live in `/System/Library/CoreServices/CoreTypes.bundle` and the bundles nested in its `Contents/Library`.                                                                                                                |
+| Kind                      | `Mac`, `iPad`, `Time Capsule`              | Finder's Kind column in the Network view: iPhone, iPad, iPod, AirPort Extreme, or Time Capsule for a type that is or conforms to `com.apple.iphone`, `.ipad`, `.ipod`, `.airport`, or `.time-capsule`; Mac for every other model, Apple TV and Watch included; PC for a host without one. Observed, not documented. |
+| Icon                      | `com.apple.macpro-2019.icns`               | The picture Finder draws for a type: its icon file, `UTTypeIconFile`, an `.icns` in the bundle's `Contents/Resources` holding it at several sizes.                                                                                                                              |
+| Sidebar icon              | `SidebarMacPro.icns`                       | The monochrome icon Finder's sidebar draws under Locations. Either the `Sidebar….icns` a type names in `_UTTypeTemplateIconFile`, or embedded in its icon file as the `sbtp` chunk. Short form: sidebar.                                                                          |
+| Template image            | `template_32x32@2x.png`                    | A monochrome image the system tints, `isTemplate` in AppKit: how a sidebar icon is rendered, not what it is. `iconutil` names an embedded sidebar icon's images `template_…`.                                                                                                     |
+| Iconset                   | `icon_512x512@2x.png`                      | The folder `iconutil -c iconset` unpacks an icon file into, one PNG per image, named by point size and scale.                                                                                                                                                                    |
+| Symbol name               | `macpro.gen3`                              | `UTTypeSymbolName`, the SF Symbol of a type. 55 of the 972 device types declare one.                                                                                                                                                                                             |
+| Service type              | `_device-info._tcp`, `_smb._tcp`           | DNS-SD (RFC 6763). Finder reads `model` from `_device-info._tcp`.                                                                                                                                                                                                                |
+| Service instance name     | `MacPro7,1` in `dns-sd -P MacPro7,1 …`     | The name of one instance of a service type. Finder pairs the `_device-info._tcp` record with the `_smb._tcp` record by it.                                                                                                                                                       |
+| TXT record                | `model=MacPro7,1`                          | The key-value pairs of a service instance.                                                                                                                                                                                                                                       |
+| Proxy registration        | `dns-sd -P`                                | Registering a service on behalf of another host, with its host name and address.                                                                                                                                                                                                 |
+| Network view              | Go > Network, ⇧⌘K                          | Finder's list of the servers on the local network. `open` on the `Network.app` inside `Finder.app/Contents/Applications` shows it; the `/Network` folder of earlier macOS is gone.                                                                                               |
 
 ### Release
 
