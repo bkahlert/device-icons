@@ -1,9 +1,7 @@
 import os
 import signal
-import stat
 import subprocess
 import sys
-import time
 
 import pytest
 
@@ -42,61 +40,40 @@ class TestRegistrations:
 
 
 class TestStartAndStop:
-    def test_start_runs_every_command_and_stop_ends_them(self, tmp_path, monkeypatch):
-        log = fake_dns_sd(tmp_path, monkeypatch)
+    def test_start_runs_every_command_and_stop_ends_them(self, fake_command):
+        dns_sd = fake_command("dns-sd", then="exec sleep 30")
         commands = registrations(["MacPro7,1"])
 
         processes = start(commands)
-        logged(log, lines=len(commands))
+        calls = dns_sd.calls(at_least=len(commands))
         running = [process.poll() for process in processes]
         stop(processes)
 
         assert running == [None, None]
         assert all(process.returncode is not None for process in processes)
-        assert sorted(line.split(" ", 1)[1] for line in log.read_text().splitlines()) == sorted(" ".join(command[1:]) for command in commands)
+        assert sorted(arguments for _, arguments in calls) == sorted(" ".join(command[1:]) for command in commands)
 
 
 class TestPreview:
     @pytest.mark.parametrize("signal_number", [signal.SIGINT, signal.SIGTERM], ids=["SIGINT", "SIGTERM"])
-    def test_unregisters_when_signalled(self, tmp_path, monkeypatch, signal_number):
-        log = fake_dns_sd(tmp_path, monkeypatch)
+    def test_unregisters_when_signalled(self, fake_command, signal_number):
+        dns_sd = fake_command("dns-sd", then="exec sleep 30")
         process = subprocess.Popen([sys.executable, "-c", "from device_icons.preview import preview; preview(['MacPro7,1'])"])
-        logged(log, lines=2)
-        registrations_pids = [int(line.split()[0]) for line in log.read_text().splitlines()]
+        registration_pids = [pid for pid, _ in dns_sd.calls(at_least=2)]
 
         process.send_signal(signal_number)
         result = process.wait(timeout=5)
 
         assert result == 0
-        assert all(not alive(pid) for pid in registrations_pids)
+        assert all(not alive(pid) for pid in registration_pids)
 
-    def test_returns_once_a_registration_ends(self, tmp_path, monkeypatch):
-        script = fake_dns_sd(tmp_path, monkeypatch).parent / "bin" / "dns-sd"
-        script.write_text("#!/bin/sh\nexit 1\n")
+    def test_returns_once_a_registration_ends(self, fake_command):
+        fake_command("dns-sd", then="exit 1")
         process = subprocess.Popen([sys.executable, "-c", "from device_icons.preview import preview; preview(['MacPro7,1'])"])
 
         result = process.wait(timeout=5)
 
         assert result == 0
-
-
-def fake_dns_sd(tmp_path, monkeypatch):
-    log = tmp_path / "dns-sd.log"
-    script = tmp_path / "bin" / "dns-sd"
-    script.parent.mkdir()
-    script.write_text(f'#!/bin/sh\nprintf "%s %s\\n" "$$" "$*" >> "{log}"\nexec sleep 30\n')
-    script.chmod(script.stat().st_mode | stat.S_IXUSR)
-    monkeypatch.setenv("PATH", f"{script.parent}{os.pathsep}{os.environ['PATH']}")
-    return log
-
-
-def logged(log, lines: int) -> None:
-    deadline = time.monotonic() + 5
-    while time.monotonic() < deadline:
-        if log.exists() and len(log.read_text().splitlines()) >= lines:
-            return
-        time.sleep(0.01)
-    raise TimeoutError(f"{lines} lines not logged within 5 s")
 
 
 def alive(pid: int) -> bool:
