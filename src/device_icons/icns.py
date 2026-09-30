@@ -11,7 +11,7 @@ SIDEBAR_IMAGE = "32x32@2x.png"
 
 
 def iconset(icon_file: Path, work: Path) -> Path:
-    """Return work/<icon file name>.iconset, unpacking the icon file into it unless it exists."""
+    """Return work/<icon file stem>.iconset, unpacking the icon file into it unless it exists."""
     target = work / f"{icon_file.stem}.iconset"
     if not target.exists():
         subprocess.run(["iconutil", "-c", "iconset", "-o", target, icon_file], check=True, stdout=subprocess.DEVNULL)
