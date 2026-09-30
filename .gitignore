@@ -1,6 +1,8 @@
 .idea
 *.iml
-/.cache
-.gradle
-build
-.netmon.*
+.DS_Store
+.venv
+__pycache__
+.pytest_cache
+dist
+out
