@@ -61,14 +61,14 @@ def parser() -> argparse.ArgumentParser:
     drawing.add_argument(
         "--secondary",
         type=opacity,
-        default=coreglyphs.HIERARCHY[1],
+        default=coreglyphs.OPACITIES[1],
         metavar="OPACITY",
         help="opacity of a secondary layer, 0 to 1 (default: %(default)s, as AppKit draws it)",
     )
     drawing.add_argument(
         "--tertiary",
         type=opacity,
-        default=coreglyphs.HIERARCHY[2],
+        default=coreglyphs.OPACITIES[2],
         metavar="OPACITY",
         help="opacity of a tertiary layer, 0 to 1 (default: %(default)s, as AppKit draws it)",
     )

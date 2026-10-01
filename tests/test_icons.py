@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from device_icons import coretypes
-from device_icons.icons import DROPPED, LEAD, Layout, Placement, Row, declared, icons, layout, markdown, write
+from device_icons.icons import DROPPED, LEAD, Layout, Placement, Row, icons, layout, markdown, write
 
 
 class TestLayout:
@@ -130,18 +130,6 @@ class TestLayout:
             assert result.dropped["no type"] == ["a", "b"]
 
 
-class TestDeclared:
-    def test_maps_a_preferred_type_identifier_onto_the_declared_one_ignoring_case(self):
-        result = declared({"J120AP": "com.apple.ipad-pro-a1670-1"}, ["com.apple.ipad-pro-A1670-1"])
-
-        assert result == {"J120AP": "com.apple.ipad-pro-A1670-1"}
-
-    def test_maps_an_undeclared_type_identifier_onto_none(self):
-        result = declared({"Foo1,1": "dyn.age4d4vxtr62z2pbv"}, ["com.apple.mac"])
-
-        assert result == {"Foo1,1": None}
-
-
 class TestMarkdown:
     def test_starts_with_the_lead_that_marks_it_as_ours(self):
         result = markdown([])
@@ -222,7 +210,7 @@ class TestWrite:
 
 
 @pytest.mark.macos
-class TestDump:
+class TestIcons:
     def test_writes_the_given_types_with_the_model_identifiers_that_resolve_to_them(self, tmp_path):
         out = tmp_path / "out"
 

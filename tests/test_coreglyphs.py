@@ -69,11 +69,11 @@ class TestSvg:
 
         assert 'fill-opacity="0.25"' in result
 
-    class TestOnHierarchy:
+    class TestOnOpacities:
         def test_uses_the_given_opacities(self):
             tertiary_then_secondary = Outline([Layer(dot(1), level=2), Layer(dot(2), level=1)], (0.0, 0.0, 3.0, 3.0))
 
-            result = svg(tertiary_then_secondary, hierarchy=(1.0, 0.6, 0.25))
+            result = svg(tertiary_then_secondary, opacities=(1.0, 0.6, 0.25))
 
             assert 'fill-opacity="0.25" d="M1 1"' in result
             assert 'fill-opacity="0.6" d="M2 2"' in result

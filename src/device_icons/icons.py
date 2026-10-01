@@ -7,7 +7,6 @@ import os
 import shutil
 import sys
 import tempfile
-from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -18,7 +17,7 @@ from device_icons.coretypes import TypeDeclaration
 DROPPED = ("no type", "no icon", "no sidebar icon")
 OURS = ("index.json", "README.md", "icons", "sidebar", "by-sidebar")
 # The first line of a run's README.md; a README.md without it belongs to someone else and stays.
-LEAD = "The icon Finder draws for each model identifier, dumped from `CoreTypes.bundle` by [device-icons](https://github.com/bkahlert/device-icons)."
+LEAD = "The icon Finder draws for each model identifier, exported from `CoreTypes.bundle` by [device-icons](https://github.com/bkahlert/device-icons)."
 # Rendered widths in README.md: the icon is 1024 px, the sidebar icon 64 px for a 32 pt slot.
 ICON_WIDTH = 128
 SIDEBAR_ICON_WIDTH = 32
@@ -102,15 +101,6 @@ def layout(placements: dict[str, Placement], resolved: dict[str, str | None]) ->
     return laid
 
 
-def declared(preferred: dict[str, str], declarations: Iterable[str]) -> dict[str, str | None]:
-    """Return each model identifier's preferred type identifier as declared, or None where no declaration matches.
-
-    Type identifiers are case-insensitive: LaunchServices returns them lowercased, the bundle declares some with capitals.
-    """
-    by_lower = {name.lower(): name for name in declarations}
-    return {model_identifier: by_lower.get(winner.lower()) for model_identifier, winner in preferred.items()}
-
-
 def markdown(rows: list[Row], horizontal: bool = False) -> str:
     """Return README.md: LEAD and a table with a row per model identifier, or a column per one if horizontal."""
     cells = [
@@ -154,7 +144,7 @@ def icons(out: Path, type_identifiers: list[str] | None = None, model_identifier
     unknown = [name for name in type_identifiers or [] if name not in declarations] + [name for name in model_identifiers or [] if name not in known]
     if unknown:
         sys.exit(f"not declared in {coretypes.BUNDLE}: {', '.join(unknown)}")
-    resolved = declared(launchservices.preferred_type_identifiers(model_identifiers or known), declarations)
+    resolved = launchservices.declared(launchservices.preferred_type_identifiers(model_identifiers or known), declarations)
     if model_identifiers and (untyped := [name for name, winner in resolved.items() if winner is None]):
         sys.exit(f"no type in {coretypes.BUNDLE}: {', '.join(untyped)}")
     if type_identifiers:
@@ -173,7 +163,7 @@ def icons(out: Path, type_identifiers: list[str] | None = None, model_identifier
             elif placements[type_identifier].sidebar_icon is None:
                 lacking["no sidebar icon"].append(name)
         if any(lacking.values()):
-            sys.exit("\n".join(f"{reason} in {coretypes.BUNDLE}: {', '.join(names)}" for reason, names in lacking.items() if names))
+            sys.exit("\n".join(f"{reason} in {coretypes.BUNDLE}: {', '.join(identifiers)}" for reason, identifiers in lacking.items() if identifiers))
         laid = layout(placements, resolved)
         write(out, laid, horizontal)
     failed = finder.set_folder_icons({out / folder: out / sidebar for folder, sidebar in laid.folders.items()})
@@ -181,7 +171,7 @@ def icons(out: Path, type_identifiers: list[str] | None = None, model_identifier
         print(f"no folder icon for {', '.join(str(folder) for folder in failed)}", file=sys.stderr)
     placed = sum(len(entry["model_identifiers"]) for group in laid.sidebars.values() for entry in group["icons"].values())
     icons = sum(len(group["icons"]) for group in laid.sidebars.values())
-    dropped = ", ".join(f"{len(names)} {reason}" for reason, names in laid.dropped.items())
+    dropped = ", ".join(f"{len(identifiers)} {reason}" for reason, identifiers in laid.dropped.items())
     return f"{len(resolved)} model identifiers: {placed} placed under {len(laid.sidebars)} sidebar icons and {icons} icons in {out}; {dropped}"
 
 

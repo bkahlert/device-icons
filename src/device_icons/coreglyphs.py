@@ -19,7 +19,7 @@ POINT_SIZE = 100.0
 # CUIRenderingMode: 1 monochrome, 3 hierarchical. NSImage draws a symbol in its preferred one unless told otherwise.
 HIERARCHICAL = 3
 # The opacity AppKit draws each hierarchy level with: primary, secondary, tertiary.
-HIERARCHY = (1.0, 0.5, 0.3)
+OPACITIES = (1.0, 0.5, 0.3)
 
 # CGPathElementType, and the points each kind carries.
 MOVE, LINE, QUAD, CURVE, CLOSE = range(5)
@@ -94,17 +94,17 @@ def resolve(symbol_name: str, aliases: dict[str, str]) -> str:
     return symbol_name
 
 
-def svg(outline: Outline, hierarchy: tuple[float, float, float] = HIERARCHY) -> str:
+def svg(outline: Outline, opacities: tuple[float, float, float] = OPACITIES) -> str:
     """Return the symbol as an SVG document: a tight viewBox with the layers moved to its origin, a path filled with currentColor per layer.
 
-    hierarchy gives the opacity of a primary, secondary, and tertiary layer. A layer's opacity is its own times its
+    opacities gives the opacity of a primary, secondary, and tertiary layer. A layer's opacity is its own times its
     level's; below 1, it is the path's fill-opacity. Coordinates are rounded to two decimals.
     """
     x, y, width, height = outline.bounds
     paths = ""
     for layer in outline.layers:
         d = "".join(COMMANDS[kind] + " ".join(f"{_number(px - x)} {_number(py - y)}" for px, py in points) for kind, points in layer.elements)
-        opacity = layer.opacity * hierarchy[layer.level]
+        opacity = layer.opacity * opacities[layer.level]
         attribute = f' fill-opacity="{_number(opacity)}"' if opacity < 1 else ""
         paths += f'<path fill="currentColor"{attribute} d="{d}"/>'
     return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {_number(width)} {_number(height)}">{paths}</svg>\n'

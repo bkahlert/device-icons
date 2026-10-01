@@ -69,11 +69,11 @@ class TestLayout:
 
         assert list(result.symbols) == ["macpro.gen3", "xserve"]
 
-    class TestOnHierarchy:
+    class TestOnOpacities:
         def test_writes_the_svgs_with_the_given_opacities(self):
-            result = layout({"com.apple.ipad": "ipad"}, {}, {"ipad": SCREEN}, [], hierarchy=(1.0, 0.5, 0.25))
+            result = layout({"com.apple.ipad": "ipad"}, {}, {"ipad": SCREEN}, [], opacities=(1.0, 0.5, 0.25))
 
-            assert result.files == {Path("symbols/ipad.svg"): svg(SCREEN, hierarchy=(1.0, 0.5, 0.25))}
+            assert result.files == {Path("symbols/ipad.svg"): svg(SCREEN, opacities=(1.0, 0.5, 0.25))}
             assert 'fill-opacity="0.25"' in result.files[Path("symbols/ipad.svg")]
 
     class TestOnGivenNames:
@@ -195,7 +195,7 @@ class TestWrite:
 
         assert [path.name for path in (out / "symbols").iterdir()] == ["new.svg"]
 
-    def test_refuses_an_earlier_dump(self, tmp_path):
+    def test_refuses_an_earlier_icons_export(self, tmp_path):
         out = tmp_path / "out"
         (out / "icons").mkdir(parents=True)
         (out / "index.json").write_text("{}")
