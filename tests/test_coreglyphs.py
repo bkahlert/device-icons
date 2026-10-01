@@ -1,6 +1,6 @@
 import pytest
 
-from device_icons.coreglyphs import CLOSE, CURVE, LINE, MOVE, QUAD, Outline, outline, svg
+from device_icons.coreglyphs import CLOSE, CURVE, LINE, MOVE, QUAD, Outline, outline, resolve, svg
 
 
 class TestSvg:
@@ -36,6 +36,28 @@ class TestSvg:
         assert 'd="M0 0"' in result
 
 
+class TestResolve:
+    def test_follows_an_alias_to_the_current_name(self):
+        result = resolve("visionpro", {"visionpro": "vision.pro"})
+
+        assert result == "vision.pro"
+
+    def test_follows_a_chain_of_aliases(self):
+        result = resolve("a", {"a": "b", "b": "c"})
+
+        assert result == "c"
+
+    def test_keeps_a_name_without_alias(self):
+        result = resolve("macpro.gen3", {"visionpro": "vision.pro"})
+
+        assert result == "macpro.gen3"
+
+    def test_terminates_on_a_cycle(self):
+        result = resolve("a", {"a": "b", "b": "a"})
+
+        assert result in {"a", "b"}
+
+
 @pytest.mark.macos
 class TestOutline:
     def test_reads_the_outline_of_a_symbol(self):
@@ -45,6 +67,11 @@ class TestOutline:
         assert result.elements[0][0] == MOVE
         assert result.elements[-1][0] == CLOSE
         assert result.bounds[3] > result.bounds[2] > 0
+
+    def test_reads_a_symbol_by_a_legacy_name(self):
+        result = outline("ipad.homebutton")
+
+        assert result is not None
 
     def test_is_none_for_a_name_the_catalog_lacks(self):
         result = outline("no.such.symbol")

@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import ctypes
 import functools
+import plistlib
 from dataclasses import dataclass
 from pathlib import Path
 
 CATALOG = Path("/System/Library/CoreServices/CoreGlyphs.bundle/Contents/Resources/Assets.car")
+# Legacy symbol names mapped to the current ones, which are the only ones the catalog knows.
+ALIASES = CATALOG.with_name("name_aliases.strings")
 # CoreUI's glyph weight runs 1 ultralight to 9 black, its glyph size 1 small to 3 large; 0 is unspecified and resolves
 # to these two, Finder's defaults.
 REGULAR = 4
@@ -50,9 +53,20 @@ class PathElement(ctypes.Structure):
 def outline(symbol_name: str) -> Outline | None:
     """Return the symbol's outline at regular weight and medium scale, or None if CoreGlyphs.bundle has no such symbol.
 
+    A legacy symbol name is followed to the current one through ALIASES first.
+
     Raises RuntimeError if CoreUI opens no catalog at CATALOG.
     """
-    return _catalog().outline(symbol_name)
+    return _catalog().outline(resolve(symbol_name, _aliases()))
+
+
+def resolve(symbol_name: str, aliases: dict[str, str]) -> str:
+    """Return the current name of the symbol: the symbol name followed through aliases until a name without one, or until a cycle."""
+    seen = set()
+    while symbol_name in aliases and symbol_name not in seen:
+        seen.add(symbol_name)
+        symbol_name = aliases[symbol_name]
+    return symbol_name
 
 
 def svg(outline: Outline) -> str:
@@ -135,3 +149,9 @@ class _Catalog:
 @functools.cache
 def _catalog() -> _Catalog:
     return _Catalog(CATALOG)
+
+
+@functools.cache
+def _aliases() -> dict[str, str]:
+    with ALIASES.open("rb") as file:
+        return plistlib.load(file)
