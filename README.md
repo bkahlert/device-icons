@@ -244,11 +244,13 @@ neither declares nor inherits a symbol name, and `no symbol` for one whose symbo
 have, which happens for a private name or two.
 
 A symbol is drawn in its preferred rendering mode, as `NSImage` draws it by default: hierarchical for most device
-symbols, monochrome for the Mac Pro and the Apple TV. Hierarchical gives each layer the opacity of its level, 1 for
-primary, 0.5 for secondary, 0.3 for tertiary, so the screen of an iPad is a translucent layer under its frame;
-monochrome draws every layer at 1. The two values are AppKit's; `--secondary` and `--tertiary` set others, say
-`--tertiary 0.25` for what the SF Symbols app's Copy Image as SVG draws. An eraser layer, which the AirPods Pro use
-to cut the bud behind the ear tip, is cut out of the layers before it, so every `path` is the shape you see.
+symbols, monochrome for about two in five, the Mac Pro and the Apple TV among them. Hierarchical gives each layer
+the opacity of its level, 1 for primary, 0.5 for secondary, 0.3 for tertiary, so the screen of an iPad is a
+translucent layer under its frame; monochrome draws every layer at 1. The two values are AppKit's; `--secondary`
+and `--tertiary` set others between 0 and 1, say `--tertiary 0.25` for what the SF Symbols app's Copy Image as SVG
+draws. An eraser layer, which the AirPods Pro use to cut the bud behind the ear tip, is cut out of the layers
+before it, so every `path` is the shape you see. An eraser with an opacity of its own, as the arms of `snowflake`
+are, is drawn as well; a group of layers acts as one, its shape their compound.
 
 All SVGs share one unit, so the `viewBox` carries each symbol's size relative to the others: the Mac Pro is 101 by 123,
 the iPhone 63 by 103. Render them at a common scale to keep that, or let each fill its box.
@@ -381,9 +383,9 @@ snake_case.
 | Sidebar icon              | `SidebarMacPro.icns`                       | The monochrome icon Finder's sidebar draws under Locations. It is either the `Sidebar….icns` file a type names in `_UTTypeTemplateIconFile`, or the `sbtp` chunk embedded in its icon file. Short form: sidebar.                                                                                |
 | Template image            | `template_32x32@2x.png`                    | A monochrome image the system tints. AppKit calls this `isTemplate`. It describes how a sidebar icon is rendered, not what it is. `iconutil` names an embedded sidebar icon's images `template_…`.                                                                                             |
 | Iconset                   | `icon_512x512@2x.png`                      | The folder `iconutil -c iconset` unpacks an icon file into: one PNG per image, named by point size and scale.                                                                                                                                                                                  |
-| Symbol name               | `macpro.gen3`                              | `UTTypeSymbolName`, the SF Symbol of a type. 55 of the 972 device types declare one; `symbols export` lets the others inherit the nearest parent's. Some are legacy names, which `name_aliases.strings` maps to current ones; `symbols export` uses the current name.                            |
+| Symbol name               | `macpro.gen3`                              | `UTTypeSymbolName`, the SF Symbol of a type. Few device types declare one; `symbols export` lets the others inherit the nearest parent's. Some are legacy names, which `name_aliases.strings` maps to current ones; `symbols export` uses the current name.                                    |
 | Symbol                    | `symbols/macpro.gen3.svg`                  | An SF Symbol: the layered vector shape `CoreGlyphs.bundle` holds under a symbol name. `symbols export` writes it as SVG in its preferred rendering mode, a `path` filled with `currentColor` per layer in a tight `viewBox`.                                                                    |
-| Layer                     | `hierarchical-1:tertiary`                  | One of the shapes a symbol is drawn from, in order. In hierarchical rendering a layer has a level, primary, secondary, or tertiary, that sets its opacity. An eraser layer cuts its shape out of the layers before it instead of drawing; `symbols export` writes those layers already cut.     |
+| Layer                     | `hierarchical-1:tertiary`                  | One of the shapes a symbol is drawn from, in order. In hierarchical rendering a layer has a level, primary, secondary, or tertiary, that sets its opacity. An eraser layer cuts its shape out of the layers before it, and is drawn too if it has an opacity; `symbols export` writes the layers already cut. |
 | Rendering mode            | hierarchical                               | How a symbol's layers are colored. Monochrome draws every layer in one color; hierarchical draws each in that color at its level's opacity, 1, 0.5, or 0.3 unless `--secondary` or `--tertiary` say otherwise. Each symbol prefers one mode, which `NSImage` uses by default and `symbols export` always. Multicolor and palette are not written. |
 | Weight, scale             | regular, medium                            | SF Symbols terms. The nine weights run from ultralight to black, as font weights do. The three scales, small, medium and large, size a symbol next to text of one point size. Finder's defaults are regular and medium.                                                                        |
 | Asset catalog             | `Assets.car`                               | The compiled catalog CoreUI reads. `CoreGlyphs.bundle` keeps the symbols in `Contents/Resources/Assets.car`, next to `CoreTypes.bundle` in `/System/Library/CoreServices`.                                                                                                                      |

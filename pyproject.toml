@@ -1,7 +1,7 @@
 [project]
 name = "device-icons"
 version = "0.1.0"
-description = "Dump the Finder icons of Apple device types and preview model identifiers in Finder"
+description = "Export the Finder icons and SF Symbols of Apple device types, and preview model identifiers in Finder"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
