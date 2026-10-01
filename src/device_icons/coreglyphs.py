@@ -136,8 +136,11 @@ class _Catalog:
         self.graphics.CGPathGetPathBoundingBox.restype = Rect
         self.graphics.CGPathGetPathBoundingBox.argtypes = [ctypes.c_void_p]
         self.graphics.CGPathApply.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
-        self.graphics.CGPathCreateCopyBySubtractingPath.restype = ctypes.c_void_p
-        self.graphics.CGPathCreateCopyBySubtractingPath.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_bool]
+        for operation in (self.graphics.CGPathCreateCopyBySubtractingPath, self.graphics.CGPathCreateCopyByUnioningPath):
+            operation.restype = ctypes.c_void_p
+            operation.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_bool]
+        self.graphics.CGPathIsEmpty.restype = ctypes.c_bool
+        self.graphics.CGPathIsEmpty.argtypes = [ctypes.c_void_p]
         self.symbol = self._send(
             ctypes.c_void_p, ctypes.c_void_p, ctypes.c_double, ctypes.c_long, ctypes.c_long, ctypes.c_long, ctypes.c_double, ctypes.c_void_p
         )
@@ -160,23 +163,46 @@ class _Catalog:
             if not symbol:
                 return None
             hierarchical = self.signed(symbol, self._selector("preferredRenderingMode")) == HIERARCHICAL
-            group = self.object(symbol, self._selector("hierarchicalLayers" if hierarchical else "monochromeLayers"))
-            shapes: list[tuple[int, int, float]] = []
-            for index in range(self.unsigned(group, self._selector("count"))):
-                layer = self.item(group, self._selector("objectAtIndex:"), index)
-                shape = self.object(layer, self._selector("shape"))
+            layers = self.object(symbol, self._selector("hierarchicalLayers" if hierarchical else "monochromeLayers"))
+            drawn: list[tuple[int, int, float]] = []
+            for index in range(self.unsigned(layers, self._selector("count"))):
+                layer = self.item(layers, self._selector("objectAtIndex:"), index)
+                shape = self._shape(layer)
+                if shape is None:
+                    continue
                 if self.flag(layer, self._selector("isEraserLayer")):
-                    subtract = self.graphics.CGPathCreateCopyBySubtractingPath
-                    shapes = [(subtract(path, shape, False), level, opacity) for path, level, opacity in shapes]
-                else:
-                    level = self.unsigned(layer, self._selector("hierarchyLevel")) if hierarchical else 0
-                    shapes.append((shape, level, self.double(layer, self._selector("opacity"))))
-            boxes = [self.graphics.CGPathGetPathBoundingBox(path) for path, _, _ in shapes]
+                    cut = [(self.graphics.CGPathCreateCopyBySubtractingPath(path, shape, False), level, opacity) for path, level, opacity in drawn]
+                    drawn = [(path, level, opacity) for path, level, opacity in cut if not self.graphics.CGPathIsEmpty(path)]
+                opacity = self.double(layer, self._selector("opacity"))
+                if opacity > 0:
+                    drawn.append((shape, self.unsigned(layer, self._selector("hierarchyLevel")) if hierarchical else 0, opacity))
+            if not drawn:
+                raise RuntimeError(f"no layer of {symbol_name} draws")
+            boxes = [self.graphics.CGPathGetPathBoundingBox(path) for path, _, _ in drawn]
             left, top = min(box.origin.x for box in boxes), min(box.origin.y for box in boxes)
             right, bottom = max(box.origin.x + box.size.width for box in boxes), max(box.origin.y + box.size.height for box in boxes)
-            return Outline([Layer(self._elements(path), level, opacity) for path, level, opacity in shapes], (left, top, right - left, bottom - top))
+            return Outline([Layer(self._elements(path), level, opacity) for path, level, opacity in drawn], (left, top, right - left, bottom - top))
         finally:
             self.objc.objc_autoreleasePoolPop(pool)
+
+    def _shape(self, layer: int) -> int | None:
+        # A group has no shape of its own; its sublayers compound into one, each eraser cut out of what came before it
+        # and each drawn sublayer added. None where nothing is left to draw or erase.
+        sublayers = self.object(layer, self._selector("sublayers"))
+        if not sublayers or not self.unsigned(sublayers, self._selector("count")):
+            shape = self.object(layer, self._selector("shape"))
+            return shape if shape and not self.graphics.CGPathIsEmpty(shape) else None
+        compound = None
+        for index in range(self.unsigned(sublayers, self._selector("count"))):
+            sublayer = self.item(sublayers, self._selector("objectAtIndex:"), index)
+            shape = self._shape(sublayer)
+            if shape is None:
+                continue
+            if compound is not None and self.flag(sublayer, self._selector("isEraserLayer")):
+                compound = self.graphics.CGPathCreateCopyBySubtractingPath(compound, shape, False)
+            if self.double(sublayer, self._selector("opacity")) > 0:
+                compound = shape if compound is None else self.graphics.CGPathCreateCopyByUnioningPath(compound, shape, False)
+        return compound
 
     def _elements(self, path: int) -> list[tuple[int, list[tuple[float, float]]]]:
         elements: list[tuple[int, list[tuple[float, float]]]] = []

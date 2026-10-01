@@ -1,3 +1,4 @@
+import math
 import re
 
 import pytest
@@ -143,6 +144,25 @@ class TestOutline:
         stems = result.layers[0]
         assert [layer.level for layer in result.layers] == [0, 0, 1]
         assert min(y for _, points in stems.elements for _, y in points) > result.bounds[1] + 0.5 * result.bounds[3]
+
+    def test_knocks_the_bell_out_of_the_filled_circle_with_a_grouped_eraser(self):
+        result = outline("bell.slash.circle.fill")
+
+        assert len(result.layers) == 1
+        assert sum(1 for kind, _ in result.layers[0].elements if kind == MOVE) > 1
+        assert all(math.isfinite(value) for value in result.bounds)
+
+    def test_draws_the_arms_of_the_snowflake_that_erase_one_another(self):
+        result = outline("snowflake")
+
+        assert len(result.layers) == 3
+        assert all(layer.elements for layer in result.layers)
+
+    def test_drops_a_layer_an_eraser_cuts_away_entirely(self):
+        result = outline("squareshape.controlhandles.on.squareshape.controlhandles")
+
+        assert all(layer.elements for layer in result.layers)
+        assert all(math.isfinite(value) for value in result.bounds)
 
     def test_draws_a_symbol_that_prefers_monochrome_as_primary_layers(self):
         result = outline("appletv")
