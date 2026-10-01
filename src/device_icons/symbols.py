@@ -34,6 +34,7 @@ class Layout:
     """What a run writes; every path is relative to the output directory, and files maps each onto its SVG."""
 
     symbols: dict[str, dict] = field(default_factory=dict)
+    types: dict[str, dict] = field(default_factory=dict)
     dropped: dict[str, list[str]] = field(default_factory=lambda: {reason: [] for reason in DROPPED})
     files: dict[Path, str] = field(default_factory=dict)
     rows: list[Row] = field(default_factory=list)
@@ -45,18 +46,23 @@ def layout(
     outlines: dict[str, Outline | None],
     given: list[str],
     opacities: tuple[float, float, float] = OPACITIES,
+    descriptions: dict[str, str | None] | None = None,
 ) -> Layout:
-    """Return the layout: a symbol per name with the types and model identifiers that get it, and a row per model identifier.
+    """Return the layout: a symbol per name with the types and model identifiers that get it, a type per type identifier, and a row per model identifier.
 
     names maps each type identifier to its current symbol name, None where it and its parents declare none. resolved
     maps each model identifier to its preferred type identifier, None for one no type declares. outlines maps each
     symbol name to its outline, None where CoreGlyphs.bundle has no such symbol. given lists the current symbol names
     asked for, each with an outline; each is placed even if no type has it, and gets a row with empty identifiers if no
     model identifier gets it. opacities gives the opacity of a primary, secondary, and tertiary layer in the SVGs.
+    descriptions maps each type identifier to its description, None where it and its parents declare none.
     A model identifier whose type is missing, or has no symbol name, or whose symbol name has no symbol, is dropped
-    under that reason. Symbols, their identifiers, rows, and the dropped are sorted; rows are grouped by symbol name.
+    under that reason; its type is still listed, with its description, symbol name, and model identifiers. Symbols,
+    types, their identifiers, rows, and the dropped are sorted; rows are grouped by symbol name.
     """
     laid = Layout()
+    for type_identifier, name in sorted(names.items()):
+        laid.types[type_identifier] = {"description": (descriptions or {}).get(type_identifier), "symbol_name": name, "model_identifiers": []}
     for type_identifier, name in sorted(names.items()):
         if name is not None and outlines.get(name) is not None:
             _place(laid, name, outlines[name], opacities)["type_identifiers"].append(type_identifier)
@@ -66,7 +72,9 @@ def layout(
         name = names.get(type_identifier) if type_identifier is not None else None
         if type_identifier is None or type_identifier not in names:
             laid.dropped["no type"].append(model_identifier)
-        elif name is None:
+            continue
+        laid.types[type_identifier]["model_identifiers"].append(model_identifier)
+        if name is None:
             laid.dropped["no symbol name"].append(model_identifier)
         elif outlines.get(name) is None:
             laid.dropped["no symbol"].append(model_identifier)
@@ -108,7 +116,7 @@ def write(out: Path, laid: Layout, horizontal: bool = False) -> None:
     for target, text in laid.files.items():
         (out / target).parent.mkdir(parents=True, exist_ok=True)
         (out / target).write_text(text)
-    index = {"symbols": laid.symbols, "dropped": laid.dropped}
+    index = {"symbols": laid.symbols, "types": laid.types, "dropped": laid.dropped}
     (out / "index.json").write_text(json.dumps(index, indent=2) + "\n")
     (out / "README.md").write_text(markdown(laid.rows, horizontal))
 
@@ -136,8 +144,12 @@ def symbols(
         sys.exit(f"not declared in {coretypes.BUNDLE}: {', '.join(unknown)}")
     resolved = launchservices.declared(launchservices.preferred_type_identifiers(model_identifiers or known), declarations)
     chosen = {winner for winner in resolved.values() if winner is not None}
-    declared_names = {type_identifier: coretypes.inherit(declarations[type_identifier], declarations).symbol_name for type_identifier in chosen}
-    names = {type_identifier: coreglyphs.current(name) if name is not None else None for type_identifier, name in declared_names.items()}
+    inherited = {type_identifier: coretypes.inherit(declarations[type_identifier], declarations) for type_identifier in chosen}
+    names = {
+        type_identifier: coreglyphs.current(declared.symbol_name) if declared.symbol_name is not None else None
+        for type_identifier, declared in inherited.items()
+    }
+    descriptions = {type_identifier: declared.description for type_identifier, declared in inherited.items()}
     given = {name: coreglyphs.current(name) for name in symbol_names or []}
     needed = set(given.values()) if given else {name for name in names.values() if name is not None}
     outlines = {name: coreglyphs.outline(name) for name in sorted(needed)}
@@ -146,7 +158,7 @@ def symbols(
     if given:
         names = {type_identifier: name for type_identifier, name in names.items() if name in needed}
         resolved = {model_identifier: winner for model_identifier, winner in resolved.items() if winner in names}
-    laid = layout(names, resolved, outlines, list(given.values()), (OPACITIES[0], secondary, tertiary))
+    laid = layout(names, resolved, outlines, list(given.values()), (OPACITIES[0], secondary, tertiary), descriptions)
     if model_identifiers and any(laid.dropped.values()):
         where = {"no symbol": coreglyphs.CATALOG}
         sys.exit(

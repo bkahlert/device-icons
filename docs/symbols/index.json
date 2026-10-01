@@ -77,6 +77,78 @@
       ]
     }
   },
+  "types": {
+    "com.apple.airport": {
+      "description": "AirPort Extreme",
+      "symbol_name": "airport.extreme",
+      "model_identifiers": [
+        "AirPort5"
+      ]
+    },
+    "com.apple.airport-express": {
+      "description": "AirPort Express",
+      "symbol_name": "airport.express",
+      "model_identifiers": [
+        "AirPort4"
+      ]
+    },
+    "com.apple.airport-extreme-tower": {
+      "description": "AirPort Extreme",
+      "symbol_name": "airport.extreme.tower",
+      "model_identifiers": [
+        "AirPort7,120"
+      ]
+    },
+    "com.apple.macmini-2018": {
+      "description": "Mac mini",
+      "symbol_name": "macmini.gen2",
+      "model_identifiers": [
+        "Macmini8,1"
+      ]
+    },
+    "com.apple.macmini-2020": {
+      "description": "Mac mini",
+      "symbol_name": "macmini.gen2",
+      "model_identifiers": [
+        "Macmini9,1"
+      ]
+    },
+    "com.apple.macpro-2019": {
+      "description": "Mac Pro",
+      "symbol_name": "macpro.gen3",
+      "model_identifiers": [
+        "MacPro7,1@ECOLOR=225,225,223"
+      ]
+    },
+    "com.apple.macpro-2019-rackmount": {
+      "description": "Mac Pro",
+      "symbol_name": "macpro.gen3.server",
+      "model_identifiers": [
+        "MacPro7,1@ECOLOR=226,226,224"
+      ]
+    },
+    "com.apple.macpro-cylinder": {
+      "description": "Mac Pro",
+      "symbol_name": "macpro.gen2",
+      "model_identifiers": [
+        "MacPro6,1"
+      ]
+    },
+    "com.apple.macpro-firewire": {
+      "description": "Mac Pro",
+      "symbol_name": "macpro.gen1",
+      "model_identifiers": [
+        "MacPro5,1"
+      ]
+    },
+    "com.apple.time-capsule": {
+      "description": "Time Capsule",
+      "symbol_name": "airport.extreme",
+      "model_identifiers": [
+        "AirPort6"
+      ]
+    }
+  },
   "dropped": {
     "no type": [],
     "no symbol name": [],
