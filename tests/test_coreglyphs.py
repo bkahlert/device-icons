@@ -9,14 +9,14 @@ class TestSvg:
     def test_writes_a_path_filled_with_current_color_in_a_tight_view_box(self):
         triangle = Outline([Layer([(MOVE, [(10.0, 20.0)]), (LINE, [(30.0, 20.0)]), (LINE, [(30.0, 60.0)]), (CLOSE, [])])], (10.0, 20.0, 20.0, 40.0))
 
-        result = svg("triangle", triangle)
+        result = svg(triangle)
 
         assert result == '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 40"><path fill="currentColor" d="M0 0L20 0L20 40Z"/></svg>\n'
 
     def test_keeps_the_orientation_of_the_outline(self):
         stand_below_screen = Outline([Layer([(MOVE, [(0.0, 0.0)]), (LINE, [(10.0, 0.0)]), (LINE, [(5.0, 8.0)]), (CLOSE, [])])], (0.0, 0.0, 10.0, 8.0))
 
-        result = svg("desktopcomputer", stand_below_screen)
+        result = svg(stand_below_screen)
 
         assert 'd="M0 0L10 0L5 8Z"' in result
 
@@ -26,69 +26,47 @@ class TestSvg:
             UNIT,
         )
 
-        result = svg("every", every)
+        result = svg(every)
 
         assert 'd="M0 0L1 0Q1 1 2 2C0 0 1 1 2 2Z"' in result
 
     def test_rounds_to_two_decimals_and_drops_trailing_zeros(self):
         curve = Outline([Layer([(MOVE, [(0.004, 1.5)]), (CURVE, [(0.0, 0.0), (1.234567, 2.5), (3.0, 3.999)])])], (0.0, 0.0, 4.0, 4.0))
 
-        result = svg("curve", curve)
+        result = svg(curve)
 
         assert 'd="M0 1.5C0 0 1.23 2.5 3 4"' in result
 
     def test_writes_a_negative_zero_as_zero(self):
         dot = Outline([Layer([(MOVE, [(-0.001, 0.0)])])], UNIT)
 
-        result = svg("dot", dot)
+        result = svg(dot)
 
         assert 'd="M0 0"' in result
 
     def test_writes_a_path_per_layer_in_drawing_order(self):
         screen_then_frame = Outline([Layer(dot(1)), Layer(dot(2))], (0.0, 0.0, 3.0, 3.0))
 
-        result = svg("ipad", screen_then_frame)
+        result = svg(screen_then_frame)
 
         assert result.count("<path") == 2
         assert result.index('d="M1 1"') < result.index('d="M2 2"')
 
-    def test_gives_a_translucent_layer_its_opacity(self):
-        screen_then_frame = Outline([Layer(dot(1), opacity=0.3), Layer(dot(2))], (0.0, 0.0, 3.0, 3.0))
+    def test_gives_a_secondary_and_a_tertiary_layer_their_opacity(self):
+        tertiary_secondary_primary = Outline([Layer(dot(1), level=2), Layer(dot(2), level=1), Layer(dot(3))], (0.0, 0.0, 4.0, 4.0))
 
-        result = svg("ipad", screen_then_frame)
+        result = svg(tertiary_secondary_primary)
 
-        assert '<path fill="currentColor" fill-opacity="0.3" d="M1 1"/><path fill="currentColor" d="M2 2"/>' in result
-
-    def test_masks_what_lies_beneath_an_eraser(self):
-        bud_tip = Outline([Layer(dot(1)), Layer(dot(2), eraser=True), Layer(dot(3), opacity=0.5)], (0.0, 0.0, 4.0, 4.0))
-
-        result = svg("airpods.pro.gen1", bud_tip)
-
-        assert result == (
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4">'
-            '<defs><mask id="eraser-airpods.pro.gen1-1"><rect width="4" height="4" fill="#fff"/><path d="M2 2"/></mask></defs>'
-            '<g mask="url(#eraser-airpods.pro.gen1-1)"><path fill="currentColor" d="M1 1"/></g>'
-            '<path fill="currentColor" fill-opacity="0.5" d="M3 3"/>'
-            "</svg>\n"
-        )
-
-    def test_nests_the_masks_of_successive_erasers(self):
-        layers = [Layer(dot(1)), Layer(dot(2), eraser=True), Layer(dot(3)), Layer(dot(4), eraser=True), Layer(dot(5))]
-
-        result = svg("x", Outline(layers, (0.0, 0.0, 6.0, 6.0)))
-
-        assert result.count("<mask") == 2
         assert (
-            '<g mask="url(#eraser-x-3)"><g mask="url(#eraser-x-1)"><path fill="currentColor" d="M1 1"/></g><path fill="currentColor" d="M3 3"/></g>'
-            '<path fill="currentColor" d="M5 5"/>'
+            '<path fill="currentColor" fill-opacity="0.3" d="M1 1"/><path fill="currentColor" fill-opacity="0.5" d="M2 2"/><path fill="currentColor" d="M3 3"/>'
         ) in result
 
-    def test_moves_an_eraser_to_the_origin_as_well(self):
-        offset = Outline([Layer(dot(11)), Layer(dot(12), eraser=True)], (10.0, 10.0, 3.0, 3.0))
+    def test_multiplies_a_layers_own_opacity_into_its_levels(self):
+        half_secondary = Outline([Layer(dot(1), level=1, opacity=0.5)], (0.0, 0.0, 2.0, 2.0))
 
-        result = svg("x", offset)
+        result = svg(half_secondary)
 
-        assert '<path d="M2 2"/></mask>' in result
+        assert 'fill-opacity="0.25"' in result
 
 
 class TestResolve:
@@ -137,7 +115,7 @@ class TestOutline:
         assert result.bounds[3] > result.bounds[2] > 0
 
     def test_keeps_the_stand_of_the_desktop_computer_below_the_screen(self):
-        result = svg("desktopcomputer", outline("desktopcomputer"))
+        result = svg(outline("desktopcomputer"))
 
         points = [(float(match["x"]), float(match["y"])) for match in COORDINATES.finditer(" ".join(PATH_DATA.findall(result)))]
         height = max(y for _, y in points)
@@ -145,22 +123,23 @@ class TestOutline:
         bottom = [x for x, y in points if y >= 0.98 * height]
         assert max(bottom) - min(bottom) < 0.5 * (max(top) - min(top))
 
-    def test_draws_the_screen_of_the_ipad_translucent_under_its_frame(self):
+    def test_draws_the_screen_of_the_ipad_as_a_tertiary_layer_under_its_frame(self):
         result = outline("ipad")
 
-        assert [(layer.opacity, layer.eraser) for layer in result.layers] == [(0.3, False), (1.0, False)]
+        assert [(layer.level, layer.opacity) for layer in result.layers] == [(2, 1.0), (0, 1.0)]
 
-    def test_erases_behind_the_translucent_ear_tips_of_the_airpods_pro(self):
+    def test_cuts_the_stems_of_the_airpods_pro_back_to_the_lower_half_and_keeps_no_eraser(self):
         result = outline("airpods.pro.gen1")
 
-        assert [layer.eraser for layer in result.layers].count(True) == 2
-        assert result.layers[-1].opacity == 0.5
+        stems = result.layers[0]
+        assert [layer.level for layer in result.layers] == [0, 0, 1]
+        assert min(y for _, points in stems.elements for _, y in points) > result.bounds[1] + 0.5 * result.bounds[3]
 
-    def test_draws_a_symbol_that_prefers_monochrome_at_full_opacity(self):
+    def test_draws_a_symbol_that_prefers_monochrome_as_primary_layers(self):
         result = outline("appletv")
 
         assert len(result.layers) > 1
-        assert {layer.opacity for layer in result.layers} == {1.0}
+        assert {layer.level for layer in result.layers} == {0}
 
     def test_reads_a_symbol_by_a_legacy_name(self):
         result = outline("ipad.homebutton")

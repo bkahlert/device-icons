@@ -30,7 +30,7 @@ class TestLayout:
     def test_maps_the_file_to_write_onto_its_svg(self):
         result = layout({"com.apple.macpro-2019": "macpro.gen3"}, {}, {"macpro.gen3": SQUARE}, [])
 
-        assert result.files == {Path("symbols/macpro.gen3.svg"): svg("macpro.gen3", SQUARE)}
+        assert result.files == {Path("symbols/macpro.gen3.svg"): svg(SQUARE)}
 
     def test_keeps_a_type_no_model_identifier_resolves_to(self):
         result = layout({"com.apple.macpro-2019": "macpro.gen3"}, {}, {"macpro.gen3": SQUARE}, [])
@@ -73,7 +73,7 @@ class TestLayout:
 
             assert result.symbols == {"xserve.raid": {"symbol": "symbols/xserve.raid.svg", "type_identifiers": [], "model_identifiers": []}}
             assert result.rows == [Row(None, None, "xserve.raid", Path("symbols/xserve.raid.svg"))]
-            assert result.files == {Path("symbols/xserve.raid.svg"): svg("xserve.raid", SQUARE)}
+            assert result.files == {Path("symbols/xserve.raid.svg"): svg(SQUARE)}
 
         def test_gives_a_given_name_a_model_identifier_gets_no_extra_row(self):
             names = {"com.apple.xserve-xeon": "xserve"}
@@ -168,21 +168,21 @@ class TestWrite:
         laid = Layout(
             symbols={"xserve": {"symbol": "symbols/xserve.svg", "type_identifiers": ["com.apple.xserve-xeon"], "model_identifiers": ["Xserve3,1"]}},
             dropped={"no type": ["J120AP"], "no symbol name": [], "no symbol": []},
-            files={Path("symbols/xserve.svg"): svg("xserve", SQUARE)},
+            files={Path("symbols/xserve.svg"): svg(SQUARE)},
             rows=[Row("Xserve3,1", "com.apple.xserve-xeon", "xserve", Path("symbols/xserve.svg"))],
         )
 
         write(out, laid)
 
-        assert (out / "symbols" / "xserve.svg").read_text() == svg("xserve", SQUARE)
+        assert (out / "symbols" / "xserve.svg").read_text() == svg(SQUARE)
         assert json.loads((out / "index.json").read_text()) == {"symbols": laid.symbols, "dropped": laid.dropped}
         assert (out / "README.md").read_text() == markdown(laid.rows)
 
     def test_replaces_an_earlier_run(self, tmp_path):
         out = tmp_path / "out"
-        write(out, Layout(files={Path("symbols/old.svg"): svg("old", SQUARE)}))
+        write(out, Layout(files={Path("symbols/old.svg"): svg(SQUARE)}))
 
-        write(out, Layout(files={Path("symbols/new.svg"): svg("new", SQUARE)}))
+        write(out, Layout(files={Path("symbols/new.svg"): svg(SQUARE)}))
 
         assert [path.name for path in (out / "symbols").iterdir()] == ["new.svg"]
 

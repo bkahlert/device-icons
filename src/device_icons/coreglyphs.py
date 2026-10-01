@@ -32,22 +32,22 @@ UTF8 = 0x08000100
 
 @dataclass(frozen=True)
 class Layer:
-    """One layer of a symbol: its path elements as (kind, points), its opacity, and whether it is an eraser.
+    """One layer of a symbol: its path elements as (kind, points), its hierarchy level, and its own opacity.
 
-    An eraser erases what the layers before it drew, within its path, instead of drawing.
+    The level is 0 primary, 1 secondary, or 2 tertiary; every layer of a monochrome symbol is primary.
     """
 
     elements: list[tuple[int, list[tuple[float, float]]]]
+    level: int = 0
     opacity: float = 1.0
-    eraser: bool = False
 
 
 @dataclass(frozen=True)
 class Outline:
-    """A symbol at POINT_SIZE in its preferred rendering mode: its layers in drawing order, and the bounds of what they draw.
+    """A symbol at POINT_SIZE in its preferred rendering mode: its layers in drawing order, and the bounds (x, y, width, height) of what they draw.
 
-    bounds is (x, y, width, height) over every layer but the erasers. CoreUI draws y down, as SVG does: the top of the
-    symbol has the smallest y.
+    What the symbol's eraser layers cut is already cut out of the layers before them. CoreUI draws y down, as SVG does:
+    the top of the symbol has the smallest y.
     """
 
     layers: list[Layer]
@@ -94,26 +94,20 @@ def resolve(symbol_name: str, aliases: dict[str, str]) -> str:
     return symbol_name
 
 
-def svg(symbol_name: str, outline: Outline) -> str:
+def svg(outline: Outline) -> str:
     """Return the symbol as an SVG document: a tight viewBox with the layers moved to its origin, a path filled with currentColor per layer.
 
-    A layer's opacity below 1 is its path's fill-opacity. An eraser becomes a mask over everything drawn before it,
-    with an id made of the symbol name and the layer's index. Coordinates are rounded to two decimals.
+    A layer's opacity is its own times HIERARCHY's for its level; below 1, it is the path's fill-opacity. Coordinates
+    are rounded to two decimals.
     """
     x, y, width, height = outline.bounds
-    masks: list[str] = []
-    body = ""
-    for index, layer in enumerate(outline.layers):
+    paths = ""
+    for layer in outline.layers:
         d = "".join(COMMANDS[kind] + " ".join(f"{_number(px - x)} {_number(py - y)}" for px, py in points) for kind, points in layer.elements)
-        if layer.eraser:
-            mask = f"eraser-{symbol_name}-{index}"
-            masks.append(f'<mask id="{mask}"><rect width="{_number(width)}" height="{_number(height)}" fill="#fff"/><path d="{d}"/></mask>')
-            body = f'<g mask="url(#{mask})">{body}</g>'
-        else:
-            opacity = f' fill-opacity="{_number(layer.opacity)}"' if layer.opacity < 1 else ""
-            body += f'<path fill="currentColor"{opacity} d="{d}"/>'
-    defs = f"<defs>{''.join(masks)}</defs>" if masks else ""
-    return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {_number(width)} {_number(height)}">{defs}{body}</svg>\n'
+        opacity = layer.opacity * HIERARCHY[layer.level]
+        attribute = f' fill-opacity="{_number(opacity)}"' if opacity < 1 else ""
+        paths += f'<path fill="currentColor"{attribute} d="{d}"/>'
+    return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {_number(width)} {_number(height)}">{paths}</svg>\n'
 
 
 def _number(value: float) -> str:
@@ -142,6 +136,8 @@ class _Catalog:
         self.graphics.CGPathGetPathBoundingBox.restype = Rect
         self.graphics.CGPathGetPathBoundingBox.argtypes = [ctypes.c_void_p]
         self.graphics.CGPathApply.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+        self.graphics.CGPathCreateCopyBySubtractingPath.restype = ctypes.c_void_p
+        self.graphics.CGPathCreateCopyBySubtractingPath.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_bool]
         self.symbol = self._send(
             ctypes.c_void_p, ctypes.c_void_p, ctypes.c_double, ctypes.c_long, ctypes.c_long, ctypes.c_long, ctypes.c_double, ctypes.c_void_p
         )
@@ -165,19 +161,20 @@ class _Catalog:
                 return None
             hierarchical = self.signed(symbol, self._selector("preferredRenderingMode")) == HIERARCHICAL
             group = self.object(symbol, self._selector("hierarchicalLayers" if hierarchical else "monochromeLayers"))
-            layers: list[Layer] = []
-            boxes: list[Rect] = []
+            shapes: list[tuple[int, int, float]] = []
             for index in range(self.unsigned(group, self._selector("count"))):
                 layer = self.item(group, self._selector("objectAtIndex:"), index)
                 shape = self.object(layer, self._selector("shape"))
-                eraser = self.flag(layer, self._selector("isEraserLayer"))
-                level = self.unsigned(layer, self._selector("hierarchyLevel")) if hierarchical else 0
-                layers.append(Layer(self._elements(shape), self.double(layer, self._selector("opacity")) * HIERARCHY[level], eraser))
-                if not eraser:
-                    boxes.append(self.graphics.CGPathGetPathBoundingBox(shape))
+                if self.flag(layer, self._selector("isEraserLayer")):
+                    subtract = self.graphics.CGPathCreateCopyBySubtractingPath
+                    shapes = [(subtract(path, shape, False), level, opacity) for path, level, opacity in shapes]
+                else:
+                    level = self.unsigned(layer, self._selector("hierarchyLevel")) if hierarchical else 0
+                    shapes.append((shape, level, self.double(layer, self._selector("opacity"))))
+            boxes = [self.graphics.CGPathGetPathBoundingBox(path) for path, _, _ in shapes]
             left, top = min(box.origin.x for box in boxes), min(box.origin.y for box in boxes)
             right, bottom = max(box.origin.x + box.size.width for box in boxes), max(box.origin.y + box.size.height for box in boxes)
-            return Outline(layers, (left, top, right - left, bottom - top))
+            return Outline([Layer(self._elements(path), level, opacity) for path, level, opacity in shapes], (left, top, right - left, bottom - top))
         finally:
             self.objc.objc_autoreleasePoolPop(pool)
 

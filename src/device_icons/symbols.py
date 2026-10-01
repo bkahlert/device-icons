@@ -79,7 +79,7 @@ def layout(names: dict[str, str | None], resolved: dict[str, str | None], outlin
 
 def _place(laid: Layout, name: str, outline: Outline) -> dict:
     target = Path("symbols") / f"{name}.svg"
-    laid.files.setdefault(target, coreglyphs.svg(name, outline))
+    laid.files.setdefault(target, coreglyphs.svg(outline))
     return laid.symbols.setdefault(name, {"symbol": target.as_posix(), "type_identifiers": [], "model_identifiers": []})
 
 
