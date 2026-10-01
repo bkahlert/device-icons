@@ -45,8 +45,8 @@ def layout(names: dict[str, str | None], resolved: dict[str, str | None], outlin
 
     names maps each type identifier to its symbol name, None where it and its parents declare none. resolved maps each
     model identifier to its preferred type identifier, None for one no type declares. outlines maps each symbol name to
-    its outline, None where CoreGlyphs.bundle has no such symbol. given lists the symbol names asked for; each is placed
-    even if no type has it, and gets a row with empty identifiers if no model identifier gets it.
+    its outline, None where CoreGlyphs.bundle has no such symbol. given lists the symbol names asked for, each with an
+    outline; each is placed even if no type has it, and gets a row with empty identifiers if no model identifier gets it.
     A model identifier whose type is missing, or has no symbol name, or whose symbol name has no symbol, is dropped
     under that reason. Symbols, their identifiers, rows, and the dropped are sorted; rows are grouped by symbol name.
     """
@@ -78,7 +78,7 @@ def layout(names: dict[str, str | None], resolved: dict[str, str | None], outlin
 
 def _place(laid: Layout, name: str, outline: Outline) -> dict:
     target = Path("symbols") / f"{name}.svg"
-    laid.files.setdefault(target, coreglyphs.svg(outline))
+    laid.files.setdefault(target, coreglyphs.svg(name, outline))
     return laid.symbols.setdefault(name, {"symbol": target.as_posix(), "type_identifiers": [], "model_identifiers": []})
 
 
