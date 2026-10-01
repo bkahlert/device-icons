@@ -236,6 +236,9 @@ uv run device-icons symbols --no-open --symbol macpro.gen3 --symbol xserve.raid 
 A symbol no model identifier gets still has its row, with the identifier cells empty, so you can look at it.
 `--horizontal` turns the table on its side as it does for `dump`.
 
+`--symbol` matches the name a type declares. Give a renamed symbol by that legacy name, `visionpro` rather than
+`vision.pro`, as `index.json` lists it; under its current name it gets its file, but no model identifiers.
+
 `symbols` stops before it writes anything if a symbol name is not in `CoreGlyphs.bundle`. The message names it.
 
 To fetch fresh symbols into another project without a checkout:
