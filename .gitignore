@@ -9,3 +9,5 @@ dist
 out
 Icon
 .ruff_cache
+.superpowers/
+docs/superpowers/
