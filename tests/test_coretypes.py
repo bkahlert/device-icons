@@ -15,6 +15,7 @@ class TestRead:
                 type_identifier="com.apple.macpro-2019",
                 model_identifiers=("MacPro7,1", "MacPro7,1@ECOLOR=225,225,223"),
                 conforms_to=("com.apple.macpro", "com.apple.mac.tower"),
+                description="Mac Pro",
                 icon_file="com.apple.macpro-2019.icns",
                 sidebar_icon_file="SidebarMacPro.icns",
                 symbol_name="macpro.gen3",
@@ -107,6 +108,15 @@ class TestInherit:
 
         assert result.symbol_name == "macpro.gen3"
 
+    def test_takes_the_description_of_the_nearest_parent(self):
+        child = TypeDeclaration("a", conforms_to=("b",), icon_file="a.icns", sidebar_icon_file="Sa.icns", symbol_name="macpro.gen3")
+        parent = TypeDeclaration("b", conforms_to=("c",))
+        grandparent = TypeDeclaration("c", description="Mac Pro")
+
+        result = inherit(child, {"a": child, "b": parent, "c": grandparent})
+
+        assert result.description == "Mac Pro"
+
     def test_searches_direct_parents_before_grandparents(self):
         child = TypeDeclaration("c", conforms_to=("p1", "p2"))
         p1 = TypeDeclaration("p1", conforms_to=("g",))
@@ -195,6 +205,7 @@ MACPRO_2019 = {
         "_UTTypeTemplateIconFile": "SidebarMacPro.icns",
         "UTTypeSymbolName": "macpro.gen3",
     },
+    "UTTypeDescription": "Mac Pro",
 }
 
 

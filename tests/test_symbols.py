@@ -70,6 +70,39 @@ class TestLayout:
 
         assert list(result.symbols) == ["macpro.gen3", "xserve"]
 
+    class TestTypes:
+        def test_lists_each_type_with_its_description_symbol_name_and_model_identifiers(self):
+            names = {"com.apple.macpro-2019": "macpro.gen3"}
+            resolved = {"MacPro7,1@ECOLOR=226,226,224": "com.apple.macpro-2019", "MacPro7,1": "com.apple.macpro-2019"}
+
+            result = layout(names, resolved, {"macpro.gen3": SQUARE}, [], descriptions={"com.apple.macpro-2019": "Mac Pro"})
+
+            assert result.types == {
+                "com.apple.macpro-2019": {
+                    "description": "Mac Pro",
+                    "symbol_name": "macpro.gen3",
+                    "model_identifiers": ["MacPro7,1", "MacPro7,1@ECOLOR=226,226,224"],
+                }
+            }
+
+        def test_lists_a_type_whose_model_identifiers_are_dropped(self):
+            names = {"com.apple.xserve-xeon": None, "com.apple.iphone-private": "private.name"}
+            resolved = {"Xserve3,1": "com.apple.xserve-xeon", "iPhone19,4": "com.apple.iphone-private"}
+
+            result = layout(names, resolved, {"private.name": None}, [], descriptions={"com.apple.xserve-xeon": "Xserve"})
+
+            assert result.types == {
+                "com.apple.iphone-private": {"description": None, "symbol_name": "private.name", "model_identifiers": ["iPhone19,4"]},
+                "com.apple.xserve-xeon": {"description": "Xserve", "symbol_name": None, "model_identifiers": ["Xserve3,1"]},
+            }
+
+        def test_sorts_the_types(self):
+            names = {"com.apple.xserve-xeon": "xserve", "com.apple.macpro-2019": "macpro.gen3"}
+
+            result = layout(names, {}, {"xserve": SQUARE, "macpro.gen3": SQUARE}, [])
+
+            assert list(result.types) == ["com.apple.macpro-2019", "com.apple.xserve-xeon"]
+
     class TestOnOpacities:
         def test_writes_the_svgs_with_the_given_opacities(self):
             result = layout({"com.apple.ipad": "ipad"}, {}, {"ipad": SCREEN}, [], opacities=(1.0, 0.5, 0.25))
@@ -177,6 +210,7 @@ class TestWrite:
         out = tmp_path / "out"
         laid = Layout(
             symbols={"xserve": {"symbol": "symbols/xserve.svg", "type_identifiers": ["com.apple.xserve-xeon"], "model_identifiers": ["Xserve3,1"]}},
+            types={"com.apple.xserve-xeon": {"description": "Xserve", "symbol_name": "xserve", "model_identifiers": ["Xserve3,1"]}},
             dropped={"no type": ["J120AP"], "no symbol name": [], "no symbol": []},
             files={Path("symbols/xserve.svg"): svg(SQUARE)},
             rows=[Row("Xserve3,1", "com.apple.xserve-xeon", "xserve", Path("symbols/xserve.svg"))],
@@ -185,7 +219,7 @@ class TestWrite:
         write(out, laid)
 
         assert (out / "symbols" / "xserve.svg").read_text() == svg(SQUARE)
-        assert json.loads((out / "index.json").read_text()) == {"symbols": laid.symbols, "dropped": laid.dropped}
+        assert json.loads((out / "index.json").read_text()) == {"symbols": laid.symbols, "types": laid.types, "dropped": laid.dropped}
         assert (out / "README.md").read_text() == markdown(laid.rows)
 
     def test_replaces_an_earlier_run(self, tmp_path):
@@ -236,6 +270,15 @@ class TestSymbols:
         symbols(out, ["macpro.gen3"])
 
         assert "| `MacPro7,1` | `com.apple.macpro-2019` | `macpro.gen3` | <img" in (out / "README.md").read_text()
+
+    def test_lists_the_description_a_type_inherits(self, tmp_path):
+        out = tmp_path / "out"
+
+        symbols(out, ["macpro.gen3"])
+
+        entry = json.loads((out / "index.json").read_text())["types"]["com.apple.macpro-2019"]
+        assert (entry["description"], entry["symbol_name"]) == ("Mac Pro", "macpro.gen3")
+        assert "MacPro7,1" in entry["model_identifiers"]
 
     def test_writes_a_given_symbol_no_device_type_declares(self, tmp_path):
         out = tmp_path / "out"
@@ -347,6 +390,11 @@ class TestSymbols:
         dropped = sum(len(identifiers) for identifiers in index["dropped"].values())
         assert {"macpro.gen3", "pc", "applewatch"} <= set(index["symbols"])
         assert "PowerMac7,2" in index["dropped"]["no symbol name"]
+        assert index["types"]["com.apple.xserve-xeon"] == {
+            "description": "Xserve",
+            "symbol_name": None,
+            "model_identifiers": ["Xserve1,1", "Xserve2,1", "Xserve3,1"],
+        }
         assert result.startswith(f"{placed + dropped} model identifiers: {placed} placed under {len(index['symbols'])} symbols in ")
 
 

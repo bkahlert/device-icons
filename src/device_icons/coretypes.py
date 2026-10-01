@@ -13,11 +13,12 @@ MODEL_IDENTIFIER_TAG_CLASS = "com.apple.device-model-code"
 
 @dataclass(frozen=True)
 class TypeDeclaration:
-    """One entry of UTExportedTypeDeclarations, reduced to what places a device icon."""
+    """One entry of UTExportedTypeDeclarations, reduced to what places and names a device icon."""
 
     type_identifier: str
     model_identifiers: tuple[str, ...] = ()
     conforms_to: tuple[str, ...] = ()
+    description: str | None = None
     icon_file: str | None = None
     sidebar_icon_file: str | None = None
     symbol_name: str | None = None
@@ -49,6 +50,7 @@ def read(root: Path) -> dict[str, TypeDeclaration]:
                 type_identifier=entry["UTTypeIdentifier"],
                 model_identifiers=_strings(entry.get("UTTypeTagSpecification", {}).get(MODEL_IDENTIFIER_TAG_CLASS)),
                 conforms_to=_strings(entry.get("UTTypeConformsTo")),
+                description=entry.get("UTTypeDescription"),
                 icon_file=icons.get("UTTypeIconFile") or entry.get("UTTypeIconFile"),
                 sidebar_icon_file=icons.get("_UTTypeTemplateIconFile"),
                 symbol_name=icons.get("UTTypeSymbolName"),
@@ -58,17 +60,19 @@ def read(root: Path) -> dict[str, TypeDeclaration]:
 
 
 def inherit(declaration: TypeDeclaration, declarations: dict[str, TypeDeclaration]) -> TypeDeclaration:
-    """Return the declaration with a missing icon file, sidebar icon file, or symbol name taken from the nearest type it conforms to.
+    """Return the declaration with a missing description, icon file, sidebar icon file, or symbol name taken from the nearest type it conforms to.
 
     Parents are searched breadth first; unknown parents are skipped, and each type is visited once.
     """
     queue, seen = deque(declaration.conforms_to), set()
-    while queue and (declaration.icon_file is None or declaration.sidebar_icon_file is None or declaration.symbol_name is None):
+    while queue and None in (declaration.description, declaration.icon_file, declaration.sidebar_icon_file, declaration.symbol_name):
         type_identifier = queue.popleft()
         if type_identifier in seen or type_identifier not in declarations:
             continue
         seen.add(type_identifier)
         parent = declarations[type_identifier]
+        if declaration.description is None and parent.description is not None:
+            declaration = replace(declaration, description=parent.description)
         if declaration.icon_file is None and parent.icon_file is not None:
             declaration = replace(declaration, icon_file=parent.icon_file)
         if declaration.sidebar_icon_file is None and parent.sidebar_icon_file is not None:
