@@ -1,10 +1,11 @@
 import json
 import re
+from collections import Counter
 from pathlib import Path
 
 import pytest
 
-from device_icons import coretypes
+from device_icons import coreglyphs, coretypes
 from device_icons.coreglyphs import CLOSE, LINE, MOVE, Layer, Outline, svg
 from device_icons.symbols import DROPPED, LEAD, Layout, Row, layout, markdown, symbols, write
 
@@ -321,8 +322,20 @@ class TestSymbols:
                 symbols(tmp_path / "out", model_identifiers=[displays[0]])
 
         def test_refuses_one_whose_symbol_name_has_no_symbol(self, tmp_path):
-            with pytest.raises(SystemExit, match=r"^no symbol in .*: V68AP$"):
-                symbols(tmp_path / "out", model_identifiers=["V68AP"])
+            declarations = coretypes.read(coretypes.BUNDLE)
+            claims = Counter(name for declaration in declarations.values() for name in declaration.model_identifiers)
+            unsymbolled = sorted(
+                name
+                for declaration in declarations.values()
+                if declaration.symbol_name is not None and coreglyphs.outline(declaration.symbol_name) is None
+                for name in declaration.model_identifiers
+                if claims[name] == 1
+            )
+            if not unsymbolled:
+                pytest.skip("every symbol name declared on this macOS is in CoreGlyphs.bundle")
+
+            with pytest.raises(SystemExit, match=rf"^no symbol in .*: {re.escape(unsymbolled[0])}$"):
+                symbols(tmp_path / "out", model_identifiers=[unsymbolled[0]])
 
     def test_writes_every_device_type_by_default(self, tmp_path):
         out = tmp_path / "out"
