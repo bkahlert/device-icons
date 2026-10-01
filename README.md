@@ -19,9 +19,9 @@ Two commands help you choose a model identifier:
 A third, [`symbols export`](#symbols-export), writes the SF Symbol of each device type as SVG, for a project that draws
 devices itself.
 
-All three run on macOS only. The icons live in `CoreTypes.bundle`, the symbols in `CoreGlyphs.bundle`, and `iconutil`,
-`osascript`, `open`, and `dns-sd` do work that no Python module does. You need [uv](https://docs.astral.sh/uv/); the
-tool itself uses only the standard library.
+All three need macOS 13 or later. The icons live in `CoreTypes.bundle`, the symbols in `CoreGlyphs.bundle`, and
+`iconutil`, `osascript`, `open`, and `dns-sd` do work that no Python module does. You need
+[uv](https://docs.astral.sh/uv/); the tool itself uses only the standard library.
 
 Run the commands from a checkout with `uv run device-icons`, or without a checkout:
 
@@ -32,9 +32,9 @@ uvx --from git+https://github.com/bkahlert/device-icons device-icons --help
 One call of each:
 
 ```bash
-uv run device-icons icons export
-uv run device-icons icons preview MacPro7,1
-uv run device-icons symbols export
+uvx --from git+https://github.com/bkahlert/device-icons device-icons icons export
+uvx --from git+https://github.com/bkahlert/device-icons device-icons icons preview MacPro7,1
+uvx --from git+https://github.com/bkahlert/device-icons device-icons symbols export
 ```
 
 Once you have chosen a model identifier, set it as `model=<identifier>` in your host's `_device-info._tcp` record.
@@ -221,9 +221,8 @@ uv run device-icons symbols export
 ```
 
 `symbols export` resolves each model identifier declared in `CoreTypes.bundle` to its type, as `icons export` does,
-takes the type's
-symbol name, and reads the symbol from `CoreGlyphs.bundle` through CoreUI, the framework Finder draws it with. It
-writes:
+takes the type's symbol name, and reads the symbol from `CoreGlyphs.bundle` through CoreUI, the framework Finder
+draws it with. It writes:
 
 | Path                        | Content                                                                                                                                                                      |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -238,10 +237,9 @@ A type without a symbol name takes the one of the nearest type it conforms to, t
 Finder inherits symbol names the same way is not verified. Most model identifiers get a symbol this way; the Power Macs
 and Xserves are among those that don't. A legacy symbol name such as `visionpro` is followed to its current name,
 `vision.pro`, through the bundle's `name_aliases.strings`, as `NSImage` does; the file and the `index.json` entry
-carry the current name.
-`dropped` names the model identifiers left out: `no type` for one no type declares, `no symbol name` for one whose type
-neither declares nor inherits a symbol name, and `no symbol` for one whose symbol name `CoreGlyphs.bundle` doesn't
-have, which happens for a private name or two.
+carry the current name. `dropped` names the model identifiers left out: `no type` for one no type declares, `no symbol
+name` for one whose type neither declares nor inherits a symbol name, and `no symbol` for one whose symbol name
+`CoreGlyphs.bundle` doesn't have, which happens for a private name or two.
 
 A symbol is drawn in its preferred rendering mode, as `NSImage` draws it by default: hierarchical for most device
 symbols, monochrome for about two in five, the Mac Pro and the Apple TV among them. Hierarchical gives each layer
@@ -387,6 +385,7 @@ snake_case.
 | Symbol                    | `symbols/macpro.gen3.svg`                  | An SF Symbol: the layered vector shape `CoreGlyphs.bundle` holds under a symbol name. `symbols export` writes it as SVG in its preferred rendering mode, a `path` filled with `currentColor` per layer in a tight `viewBox`.                                                                    |
 | Layer                     | `hierarchical-1:tertiary`                  | One of the shapes a symbol is drawn from, in order. In hierarchical rendering a layer has a level, primary, secondary, or tertiary, that sets its opacity. An eraser layer cuts its shape out of the layers before it, and is drawn too if it has an opacity; `symbols export` writes the layers already cut. |
 | Rendering mode            | hierarchical                               | How a symbol's layers are colored. Monochrome draws every layer in one color; hierarchical draws each in that color at its level's opacity, 1, 0.5, or 0.3 unless `--secondary` or `--tertiary` say otherwise. Each symbol prefers one mode, which `NSImage` uses by default and `symbols export` always. Multicolor and palette are not written. |
+| Outline                   | `Outline(layers, bounds)`                  | A symbol's layers as paths at one point size, weight, and scale, with the bounds of what they draw. Typography's word for the shape of a glyph; `symbols export` reads one per symbol from CoreUI, layer by layer.                                                                             |
 | Weight, scale             | regular, medium                            | SF Symbols terms. The nine weights run from ultralight to black, as font weights do. The three scales, small, medium and large, size a symbol next to text of one point size. Finder's defaults are regular and medium.                                                                        |
 | Asset catalog             | `Assets.car`                               | The compiled catalog CoreUI reads. `CoreGlyphs.bundle` keeps the symbols in `Contents/Resources/Assets.car`, next to `CoreTypes.bundle` in `/System/Library/CoreServices`.                                                                                                                      |
 | Service type              | `_device-info._tcp`, `_smb._tcp`           | A DNS-SD service type (RFC 6763). Finder reads `model` from `_device-info._tcp`.                                                                                                                                                                                                               |
