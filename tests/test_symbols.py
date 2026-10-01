@@ -1,8 +1,10 @@
 import json
+import re
 from pathlib import Path
 
 import pytest
 
+from device_icons import coretypes
 from device_icons.coreglyphs import CLOSE, LINE, MOVE, Layer, Outline, svg
 from device_icons.symbols import DROPPED, LEAD, Layout, Row, layout, markdown, symbols, write
 
@@ -303,6 +305,24 @@ class TestSymbols:
                 symbols(out, model_identifiers=["Xserve3,1"])
 
             assert not out.exists()
+
+        def test_refuses_one_that_resolves_to_no_type(self, tmp_path):
+            declarations = coretypes.read(coretypes.BUNDLE)
+            displays = sorted(
+                name
+                for declaration in declarations.values()
+                if "public.display" in coretypes.ancestors(declaration, declarations)
+                for name in declaration.model_identifiers
+            )
+            if not displays:
+                pytest.skip("no display declared on this macOS")
+
+            with pytest.raises(SystemExit, match=rf"^no type in .*: {re.escape(displays[0])}$"):
+                symbols(tmp_path / "out", model_identifiers=[displays[0]])
+
+        def test_refuses_one_whose_symbol_name_has_no_symbol(self, tmp_path):
+            with pytest.raises(SystemExit, match=r"^no symbol in .*: V68AP$"):
+                symbols(tmp_path / "out", model_identifiers=["V68AP"])
 
     def test_writes_every_device_type_by_default(self, tmp_path):
         out = tmp_path / "out"
