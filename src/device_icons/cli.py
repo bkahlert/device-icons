@@ -59,14 +59,30 @@ def parser() -> argparse.ArgumentParser:
         help="export only the symbol of this model identifier, with this model identifier; repeatable",
     )
     drawing.add_argument(
-        "--secondary", type=float, default=coreglyphs.HIERARCHY[1], metavar="OPACITY", help="opacity of a secondary layer (default: 0.5, as AppKit draws it)"
+        "--secondary",
+        type=opacity,
+        default=coreglyphs.HIERARCHY[1],
+        metavar="OPACITY",
+        help="opacity of a secondary layer, 0 to 1 (default: %(default)s, as AppKit draws it)",
     )
     drawing.add_argument(
-        "--tertiary", type=float, default=coreglyphs.HIERARCHY[2], metavar="OPACITY", help="opacity of a tertiary layer (default: 0.3, as AppKit draws it)"
+        "--tertiary",
+        type=opacity,
+        default=coreglyphs.HIERARCHY[2],
+        metavar="OPACITY",
+        help="opacity of a tertiary layer, 0 to 1 (default: %(default)s, as AppKit draws it)",
     )
     drawing.add_argument("--no-open", dest="open", action="store_false", help="do not open the output directory in Finder")
     drawing.add_argument("--horizontal", action="store_true", help="lay README.md's table out with a column per model identifier")
     return root
+
+
+def opacity(text: str) -> float:
+    """Return the opacity text gives; raise ArgumentTypeError if it is not a number between 0 and 1."""
+    value = float(text)
+    if not 0 <= value <= 1:
+        raise argparse.ArgumentTypeError(f"{text} is not between 0 and 1")
+    return value
 
 
 def main(argv: list[str] | None = None) -> int:

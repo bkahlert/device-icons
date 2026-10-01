@@ -150,6 +150,18 @@ class TestParser:
 
                 assert (result.secondary, result.tertiary) == (0.6, 0.25)
 
+            def test_refuses_an_opacity_above_one(self):
+                with pytest.raises(SystemExit) as exit:
+                    parser().parse_args(["symbols", "export", "--secondary", "50"])
+
+                assert exit.value.code == 2
+
+            def test_refuses_an_opacity_below_zero(self):
+                with pytest.raises(SystemExit) as exit:
+                    parser().parse_args(["symbols", "export", "--tertiary", "-0.5"])
+
+                assert exit.value.code == 2
+
             class TestNoOpen:
                 def test_turns_opening_off(self):
                     result = parser().parse_args(["symbols", "export", "--no-open"])
