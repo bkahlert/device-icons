@@ -28,7 +28,10 @@ UTF8 = 0x08000100
 
 @dataclass(frozen=True)
 class Outline:
-    """A symbol's path at POINT_SIZE: its elements as (kind, points), and its bounds as (x, y, width, height), y up."""
+    """A symbol's path at POINT_SIZE: its elements as (kind, points), and its bounds as (x, y, width, height).
+
+    CoreUI draws y down, as SVG does: the top of the symbol has the smallest y.
+    """
 
     elements: list[tuple[int, list[tuple[float, float]]]]
     bounds: tuple[float, float, float, float]
@@ -70,13 +73,12 @@ def resolve(symbol_name: str, aliases: dict[str, str]) -> str:
 
 
 def svg(outline: Outline) -> str:
-    """Return the outline as an SVG document: a tight viewBox, one path filled with currentColor, y pointing down.
+    """Return the outline as an SVG document: a tight viewBox with the outline moved to its origin, one path filled with currentColor.
 
     Coordinates are rounded to two decimals.
     """
     x, y, width, height = outline.bounds
-    top = y + height
-    d = "".join(COMMANDS[kind] + " ".join(f"{_number(px - x)} {_number(top - py)}" for px, py in points) for kind, points in outline.elements)
+    d = "".join(COMMANDS[kind] + " ".join(f"{_number(px - x)} {_number(py - y)}" for px, py in points) for kind, points in outline.elements)
     return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {_number(width)} {_number(height)}"><path fill="currentColor" d="{d}"/></svg>\n'
 
 
