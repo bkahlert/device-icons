@@ -58,12 +58,12 @@ def read(root: Path) -> dict[str, TypeDeclaration]:
 
 
 def inherit(declaration: TypeDeclaration, declarations: dict[str, TypeDeclaration]) -> TypeDeclaration:
-    """Return the declaration with a missing icon file or sidebar icon file taken from the nearest type it conforms to.
+    """Return the declaration with a missing icon file, sidebar icon file, or symbol name taken from the nearest type it conforms to.
 
     Parents are searched breadth first; unknown parents are skipped, and each type is visited once.
     """
     queue, seen = deque(declaration.conforms_to), set()
-    while queue and (declaration.icon_file is None or declaration.sidebar_icon_file is None):
+    while queue and (declaration.icon_file is None or declaration.sidebar_icon_file is None or declaration.symbol_name is None):
         type_identifier = queue.popleft()
         if type_identifier in seen or type_identifier not in declarations:
             continue
@@ -73,6 +73,8 @@ def inherit(declaration: TypeDeclaration, declarations: dict[str, TypeDeclaratio
             declaration = replace(declaration, icon_file=parent.icon_file)
         if declaration.sidebar_icon_file is None and parent.sidebar_icon_file is not None:
             declaration = replace(declaration, sidebar_icon_file=parent.sidebar_icon_file)
+        if declaration.symbol_name is None and parent.symbol_name is not None:
+            declaration = replace(declaration, symbol_name=parent.symbol_name)
         queue.extend(parent.conforms_to)
     return declaration
 

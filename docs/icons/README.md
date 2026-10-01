@@ -1,4 +1,4 @@
-The icon Finder draws for each model identifier, dumped from `CoreTypes.bundle` by [device-icons](https://github.com/bkahlert/device-icons).
+The icon Finder draws for each model identifier, exported from `CoreTypes.bundle` by [device-icons](https://github.com/bkahlert/device-icons).
 
 | Model identifier | `AirPort4` | `AirPort5` | `AirPort7,120` | `Macmini8,1` | `Macmini9,1` | `MacPro5,1` | `MacPro6,1` | `AirPort6` | `Xserve3,1` | `MacPro7,1`<br/>`@ECOLOR=`<br/>`225,225,223` | `MacPro7,1`<br/>`@ECOLOR=`<br/>`226,226,224` |
 | --- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |

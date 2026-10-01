@@ -1,0 +1,85 @@
+{
+  "symbols": {
+    "airport.express": {
+      "symbol": "symbols/airport.express.svg",
+      "type_identifiers": [
+        "com.apple.airport-express"
+      ],
+      "model_identifiers": [
+        "AirPort4"
+      ]
+    },
+    "airport.extreme": {
+      "symbol": "symbols/airport.extreme.svg",
+      "type_identifiers": [
+        "com.apple.airport",
+        "com.apple.time-capsule"
+      ],
+      "model_identifiers": [
+        "AirPort5",
+        "AirPort6"
+      ]
+    },
+    "airport.extreme.tower": {
+      "symbol": "symbols/airport.extreme.tower.svg",
+      "type_identifiers": [
+        "com.apple.airport-extreme-tower"
+      ],
+      "model_identifiers": [
+        "AirPort7,120"
+      ]
+    },
+    "macmini.gen2": {
+      "symbol": "symbols/macmini.gen2.svg",
+      "type_identifiers": [
+        "com.apple.macmini-2018",
+        "com.apple.macmini-2020"
+      ],
+      "model_identifiers": [
+        "Macmini8,1",
+        "Macmini9,1"
+      ]
+    },
+    "macpro.gen1": {
+      "symbol": "symbols/macpro.gen1.svg",
+      "type_identifiers": [
+        "com.apple.macpro-firewire"
+      ],
+      "model_identifiers": [
+        "MacPro5,1"
+      ]
+    },
+    "macpro.gen2": {
+      "symbol": "symbols/macpro.gen2.svg",
+      "type_identifiers": [
+        "com.apple.macpro-cylinder"
+      ],
+      "model_identifiers": [
+        "MacPro6,1"
+      ]
+    },
+    "macpro.gen3": {
+      "symbol": "symbols/macpro.gen3.svg",
+      "type_identifiers": [
+        "com.apple.macpro-2019"
+      ],
+      "model_identifiers": [
+        "MacPro7,1@ECOLOR=225,225,223"
+      ]
+    },
+    "macpro.gen3.server": {
+      "symbol": "symbols/macpro.gen3.server.svg",
+      "type_identifiers": [
+        "com.apple.macpro-2019-rackmount"
+      ],
+      "model_identifiers": [
+        "MacPro7,1@ECOLOR=226,226,224"
+      ]
+    }
+  },
+  "dropped": {
+    "no type": [],
+    "no symbol name": [],
+    "no symbol": []
+  }
+}

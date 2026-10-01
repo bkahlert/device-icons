@@ -1,4 +1,4 @@
-"""The dump: the icon and sidebar icon of every device type, laid out for picking in Finder."""
+"""The icons: the icon and sidebar icon of every device type, laid out for picking in Finder."""
 
 from __future__ import annotations
 
@@ -7,21 +7,22 @@ import os
 import shutil
 import sys
 import tempfile
-from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from device_icons import coretypes, finder, icns, launchservices
+from device_icons import coretypes, finder, icns, launchservices, output
 from device_icons.coretypes import TypeDeclaration
 
 DROPPED = ("no type", "no icon", "no sidebar icon")
 OURS = ("index.json", "README.md", "icons", "sidebar", "by-sidebar")
-# The first line of a dump's README.md; a README.md without it belongs to someone else and stays.
-LEAD = "The icon Finder draws for each model identifier, dumped from `CoreTypes.bundle` by [device-icons](https://github.com/bkahlert/device-icons)."
+# The first line of a run's README.md; a README.md without it belongs to someone else and stays.
+LEAD = "The icon Finder draws for each model identifier, exported from `CoreTypes.bundle` by [device-icons](https://github.com/bkahlert/device-icons)."
 # Rendered widths in README.md: the icon is 1024 px, the sidebar icon 64 px for a 32 pt slot.
 ICON_WIDTH = 128
 SIDEBAR_ICON_WIDTH = 32
+HEADERS = ("Model identifier", "Type identifier", "Kind", "Icon", "Sidebar icon")
+RULE = ("---", "---", "---", ":-:", ":-:")
 
 
 @dataclass(frozen=True)
@@ -47,7 +48,7 @@ class Row:
 
 @dataclass
 class Layout:
-    """What a dump writes; every path but the sources in files is relative to the output directory."""
+    """What a run writes; every path but the sources in files is relative to the output directory."""
 
     sidebars: dict[str, dict] = field(default_factory=dict)
     dropped: dict[str, list[str]] = field(default_factory=lambda: {reason: [] for reason in DROPPED})
@@ -100,78 +101,24 @@ def layout(placements: dict[str, Placement], resolved: dict[str, str | None]) ->
     return laid
 
 
-def declared(preferred: dict[str, str], declarations: Iterable[str]) -> dict[str, str | None]:
-    """Return each model identifier's preferred type identifier as declared, or None where no declaration matches.
-
-    Type identifiers are case-insensitive: LaunchServices returns them lowercased, the bundle declares some with capitals.
-    """
-    by_lower = {name.lower(): name for name in declarations}
-    return {model_identifier: by_lower.get(winner.lower()) for model_identifier, winner in preferred.items()}
-
-
 def markdown(rows: list[Row], horizontal: bool = False) -> str:
     """Return README.md: LEAD and a table with a row per model identifier, or a column per one if horizontal."""
     cells = [
         (
-            f"`{row.model_identifier}`",
-            f"`{row.type_identifier}`",
+            row.model_identifier,
+            output.code(row.type_identifier),
             row.kind,
             f'<img src="{row.icon.as_posix()}" alt="{row.icon.stem}" width="{ICON_WIDTH}">',
             f'<img src="{row.sidebar_icon.as_posix()}" alt="{row.sidebar_icon.stem}" width="{SIDEBAR_ICON_WIDTH}">',
         )
         for row in rows
     ]
-    headers = ("Model identifier", "Type identifier", "Kind", "Icon", "Sidebar icon")
-    if horizontal:
-        table = [
-            (headers[0], *(_stacked(row.model_identifier) for row in rows)),
-            ("---", *[":-:"] * len(rows)),
-            *((header, *(cell[index] for cell in cells)) for index, header in enumerate(headers) if index),
-        ]
-    else:
-        table = [headers, ("---", "---", "---", ":-:", ":-:"), *cells]
-    return "\n".join([LEAD, "", *(f"| {' | '.join(line)} |" for line in table)]) + "\n"
-
-
-def _stacked(model_identifier: str) -> str:
-    """Return the model identifier in code, an @KEY=value suffix on two more lines so the column stays narrow."""
-    head, at, rest = model_identifier.partition("@")
-    if not at:
-        return f"`{head}`"
-    key, equals, value = rest.partition("=")
-    return f"`{head}`<br/>`@{key}{equals}`<br/>`{value}`"
-
-
-def clear(out: Path) -> None:
-    """Empty the output directory, creating it if missing.
-
-    Exits if it is not a directory, or holds anything but an earlier dump and .DS_Store; a README.md is an earlier
-    dump's only when it starts with LEAD.
-    """
-    if not out.exists():
-        out.mkdir(parents=True)
-        return
-    if not out.is_dir():
-        sys.exit(f"{out} is not a directory")
-    contents = [path for path in out.iterdir() if path.name != ".DS_Store"]
-    if not all(_ours(path) for path in contents):
-        sys.exit(f"{out} is not empty and not an earlier dump; refusing to clear it")
-    for path in contents:
-        if path.is_dir() and not path.is_symlink():
-            shutil.rmtree(path)
-        else:
-            path.unlink()
-
-
-def _ours(path: Path) -> bool:
-    if path.name == "README.md":
-        return path.is_file() and path.read_text(errors="replace").startswith(LEAD)
-    return path.name in OURS
+    return "\n".join([LEAD, "", *output.table(HEADERS, RULE, cells, horizontal)]) + "\n"
 
 
 def write(out: Path, laid: Layout, horizontal: bool = False) -> None:
     """Clear the output directory, then write the layout's files, relative links, index.json, and README.md."""
-    clear(out)
+    output.clear(out, OURS, LEAD)
     for target, source in laid.files.items():
         (out / target).parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, out / target)
@@ -183,8 +130,8 @@ def write(out: Path, laid: Layout, horizontal: bool = False) -> None:
     (out / "README.md").write_text(markdown(laid.rows, horizontal))
 
 
-def dump(out: Path, type_identifiers: list[str] | None = None, model_identifiers: list[str] | None = None, horizontal: bool = False) -> str:
-    """Dump the icons of every device type, or of the given type or model identifiers, into out; return a summary line.
+def icons(out: Path, type_identifiers: list[str] | None = None, model_identifiers: list[str] | None = None, horizontal: bool = False) -> str:
+    """Write the icon and sidebar icon of every device type, or of the given type or model identifiers, into out; return a summary line.
 
     horizontal lays README.md's table out with a column per model identifier.
 
@@ -197,7 +144,7 @@ def dump(out: Path, type_identifiers: list[str] | None = None, model_identifiers
     unknown = [name for name in type_identifiers or [] if name not in declarations] + [name for name in model_identifiers or [] if name not in known]
     if unknown:
         sys.exit(f"not declared in {coretypes.BUNDLE}: {', '.join(unknown)}")
-    resolved = declared(launchservices.preferred_type_identifiers(model_identifiers or known), declarations)
+    resolved = launchservices.declared(launchservices.preferred_type_identifiers(model_identifiers or known), declarations)
     if model_identifiers and (untyped := [name for name, winner in resolved.items() if winner is None]):
         sys.exit(f"no type in {coretypes.BUNDLE}: {', '.join(untyped)}")
     if type_identifiers:
@@ -216,7 +163,7 @@ def dump(out: Path, type_identifiers: list[str] | None = None, model_identifiers
             elif placements[type_identifier].sidebar_icon is None:
                 lacking["no sidebar icon"].append(name)
         if any(lacking.values()):
-            sys.exit("\n".join(f"{reason} in {coretypes.BUNDLE}: {', '.join(names)}" for reason, names in lacking.items() if names))
+            sys.exit("\n".join(f"{reason} in {coretypes.BUNDLE}: {', '.join(identifiers)}" for reason, identifiers in lacking.items() if identifiers))
         laid = layout(placements, resolved)
         write(out, laid, horizontal)
     failed = finder.set_folder_icons({out / folder: out / sidebar for folder, sidebar in laid.folders.items()})
@@ -224,7 +171,7 @@ def dump(out: Path, type_identifiers: list[str] | None = None, model_identifiers
         print(f"no folder icon for {', '.join(str(folder) for folder in failed)}", file=sys.stderr)
     placed = sum(len(entry["model_identifiers"]) for group in laid.sidebars.values() for entry in group["icons"].values())
     icons = sum(len(group["icons"]) for group in laid.sidebars.values())
-    dropped = ", ".join(f"{len(names)} {reason}" for reason, names in laid.dropped.items())
+    dropped = ", ".join(f"{len(identifiers)} {reason}" for reason, identifiers in laid.dropped.items())
     return f"{len(resolved)} model identifiers: {placed} placed under {len(laid.sidebars)} sidebar icons and {icons} icons in {out}; {dropped}"
 
 

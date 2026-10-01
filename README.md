@@ -11,17 +11,30 @@ icon for that model. For example, `model=MacPro7,1` gives the 2019 Mac Pro tower
 
 Two commands help you choose a model identifier:
 
-- [`dump`](#dump) writes every icon macOS has for a model identifier and groups them, so you can pick one by eye in
-  Finder.
-- [`preview`](#preview) shows the icon for a model identifier in Finder's Network view. You don't need the device.
+- [`icons export`](#icons-export) writes every icon macOS has for a model identifier and groups them, so you can pick
+  one by eye in Finder.
+- [`icons preview`](#icons-preview) shows the icon for a model identifier in Finder's Network view. You don't need the
+  device.
 
-Both run on macOS only. The icons live in `CoreTypes.bundle`, and `iconutil`, `osascript`, `open`, and `dns-sd` do work
-that no Python module does. You need [uv](https://docs.astral.sh/uv/); the tool itself uses only the standard library.
+A third, [`symbols export`](#symbols-export), writes the SF Symbol of each device type as SVG, for a project that draws
+devices itself.
+
+All three need macOS 13 or later. The icons live in `CoreTypes.bundle`, the symbols in `CoreGlyphs.bundle`, and
+`iconutil`, `osascript`, `open`, and `dns-sd` do work that no Python module does. You need
+[uv](https://docs.astral.sh/uv/); the tool itself uses only the standard library.
 
 Run the commands from a checkout with `uv run device-icons`, or without a checkout:
 
 ```bash
 uvx --from git+https://github.com/bkahlert/device-icons device-icons --help
+```
+
+One call of each:
+
+```bash
+uvx --from git+https://github.com/bkahlert/device-icons device-icons icons export
+uvx --from git+https://github.com/bkahlert/device-icons device-icons icons preview MacPro7,1
+uvx --from git+https://github.com/bkahlert/device-icons device-icons symbols export
 ```
 
 Once you have chosen a model identifier, set it as `model=<identifier>` in your host's `_device-info._tcp` record.
@@ -32,16 +45,16 @@ Once you have chosen a model identifier, set it as `model=<identifier>` in your 
 <!--
 docs/network-view.png: Finder's Network view with the eleven devices of the table below announced by
 
-    uv run device-icons preview --no-open AirPort4 AirPort5 AirPort6 AirPort7,120 Macmini8,1 Macmini9,1 \
+    uv run device-icons icons preview --no-open AirPort4 AirPort5 AirPort6 AirPort7,120 Macmini8,1 Macmini9,1 \
       MacPro6,1 MacPro5,1 MacPro7,1@ECOLOR=225,225,223 MacPro7,1@ECOLOR=226,226,224 Xserve3,1
 
 Icon view grouped by Kind, toolbar and sidebar hidden, captured with shift-command-4 on a Retina display, then the
 hosts of the home network edited out with ChatGPT Astra, one of them kept as the PC.
 -->
 
-## Dump
+## `icons export`
 
-Here are eleven of the icons, laid out by `dump --horizontal`:
+Here are eleven of the icons, laid out by `icons export --horizontal`:
 
 | Model identifier | `AirPort4` | `AirPort5` | `AirPort7,120` | `Macmini8,1` | `Macmini9,1` | `MacPro5,1` | `MacPro6,1` | `AirPort6` | `Xserve3,1` | `MacPro7,1`<br/>`@ECOLOR=`<br/>`225,225,223` | `MacPro7,1`<br/>`@ECOLOR=`<br/>`226,226,224` |
 | --- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
@@ -53,7 +66,7 @@ Here are eleven of the icons, laid out by `dump --horizontal`:
 <!--
 The table above is docs/icons/README.md, made with
 
-    uv run device-icons dump --horizontal --no-open \
+    uv run device-icons icons export --horizontal --no-open \
       --model AirPort4 --model AirPort5 --model AirPort6 --model AirPort7,120 \
       --model Macmini8,1 --model Macmini9,1 --model MacPro6,1 --model MacPro5,1 \
       --model MacPro7,1@ECOLOR=225,225,223 --model MacPro7,1@ECOLOR=226,226,224 \
@@ -67,11 +80,11 @@ prefixed with docs/icons/ since this file sits at the repository root.
 To get every icon:
 
 ```bash
-uv run device-icons dump
+uv run device-icons icons export
 ```
 
-`dump` reads each model identifier declared in `CoreTypes.bundle` and asks LaunchServices which type it resolves to. It
-then writes that type's icon and sidebar icon, grouped by sidebar icon:
+`icons export` reads each model identifier declared in `CoreTypes.bundle` and asks LaunchServices which type it
+resolves to. It then writes that type's icon and sidebar icon, grouped by sidebar icon:
 
 | Path                              | Content                                                                                                            |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -82,10 +95,11 @@ then writes that type's icon and sidebar icon, grouped by sidebar icon:
 | `index.json`                      | `sidebars` lists each sidebar icon, its icons, and their type and model identifiers; `dropped` lists the model identifiers left out, by reason |
 | `README.md`                       | the same data as a table, one row per model identifier: type identifier, Kind, icon, sidebar icon                 |
 
-The dump goes to `out/`, or to the directory you name, and opens in Finder. `dump` creates the directory if needed.
+The output goes to `out/`, or to the directory you name, and opens in Finder. `icons export` creates the directory if
+needed.
 
-If the directory already holds an earlier dump, `dump` replaces it. Anything else in it makes `dump` stop, so it never
-deletes your files. It recognises an earlier dump by its file names and the first line of its `README.md`.
+If the directory already holds an earlier run, `icons export` replaces it. Anything else in it makes it stop, so it
+never deletes your files. It recognises an earlier run by its file names and the first line of its `README.md`.
 
 ### Pick an icon
 
@@ -111,30 +125,30 @@ of them works as `model=…`:
 }
 ```
 
-`dropped`, next to `sidebars`, lists what `dump` left out and why. Displays are left out because their types are no
-devices. Apple TV, Watch, and AirPods are left out because their types have no sidebar icon.
+`dropped`, next to `sidebars`, lists what `icons export` left out and why. Displays are left out because their types
+are no devices. Apple TV, Watch, and AirPods are left out because their types have no sidebar icon.
 
-Check the result with [`preview`](#preview).
+Check the result with [`icons preview`](#icons-preview).
 
-### Dump a few
+### A few icons
 
-To dump only your project's devices into its docs, without opening Finder:
+To write only the icons of your project's devices into its docs, without opening Finder:
 
 ```bash
-uv run device-icons dump --no-open --model MacPro7,1 --model Xserve3,1 docs/icons
+uv run device-icons icons export --no-open --model MacPro7,1 --model Xserve3,1 docs/icons
 ```
 
-To dump whole types instead:
+To write whole types instead:
 
 ```bash
-uv run device-icons dump --no-open --type com.apple.macpro-2019 --type com.apple.xserve-xeon docs/icons
+uv run device-icons icons export --no-open --type com.apple.macpro-2019 --type com.apple.xserve-xeon docs/icons
 ```
 
 `--model` takes the model identifiers you name and the types they resolve to. `--type` takes the type identifiers you
 name and the model identifiers that resolve to them. You can't combine the two.
 
-`dump` stops before it writes anything if an identifier is not declared or resolves to no type. It also stops if the
-type has no icon or no sidebar icon. The message names the identifier and says what is missing.
+`icons export` stops before it writes anything if an identifier is not declared or resolves to no type. It also stops
+if the type has no icon or no sidebar icon. The message names the identifier and says what is missing.
 
 ### A table for a README
 
@@ -142,40 +156,143 @@ type has no icon or no sidebar icon. The message names the identifier and says w
 for type identifier, Kind, icon, and sidebar icon. The table at the top of this section was made this way:
 
 ```bash
-uv run device-icons dump --horizontal --no-open --model MacPro7,1 --model Xserve3,1 docs/icons
+uv run device-icons icons export --horizontal --no-open --model MacPro7,1 --model Xserve3,1 docs/icons
 ```
 
-## Preview
+## `icons preview`
 
 To see the icon Finder draws for a model identifier, without owning the device:
 
 ```bash
-uv run device-icons preview MacPro7,1
+uv run device-icons icons preview MacPro7,1
 ```
 
 Finder's Network view opens. Within a few seconds a device named `MacPro7,1` appears, with the icon that identifier
 produces, as pictured above.
 
-`preview` keeps the device there until you press Ctrl-C, it receives a termination signal, or one of its registrations
-ends. Then it unregisters.
+`icons preview` keeps the device there until you press Ctrl-C, it receives a termination signal, or one of its
+registrations ends. Then it unregisters.
 
 To compare several at once:
 
 ```bash
-uv run device-icons preview MacPro7,1 Xserve3,1 "Mac14,8@ECOLOR=1"
+uv run device-icons icons preview MacPro7,1 Xserve3,1 "Mac14,8@ECOLOR=1"
 ```
 
 To use the name your real device will have, pass `--name`. It takes one model identifier at a time, because Finder pairs
 a device's records by name:
 
 ```bash
-uv run device-icons preview --name "Rack" MacPro7,1@ECOLOR=226,226,224
+uv run device-icons icons preview --name "Rack" MacPro7,1@ECOLOR=226,226,224
 ```
 
 `--no-open` doesn't open Finder. Open the Network view yourself with Go > Network or ⇧⌘K.
 
-`preview` can't show the sidebar icon. Finder shows it only under Locations, for a server it has mounted, and the
+`icons preview` can't show the sidebar icon. Finder shows it only under Locations, for a server it has mounted, and the
 previewed host does not exist.
+
+## `symbols export`
+
+Here are the symbols of ten of the eleven devices above, laid out by `symbols export --horizontal`; the Xserve's type
+declares no symbol name:
+
+| Model identifier | `AirPort4` | `AirPort5` | `AirPort6` | `AirPort7,120` | `Macmini8,1` | `Macmini9,1` | `MacPro5,1` | `MacPro6,1` | `MacPro7,1`<br/>`@ECOLOR=`<br/>`225,225,223` | `MacPro7,1`<br/>`@ECOLOR=`<br/>`226,226,224` |
+| --- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| Type identifier | `com.apple.airport-express` | `com.apple.airport` | `com.apple.time-capsule` | `com.apple.airport-extreme-tower` | `com.apple.macmini-2018` | `com.apple.macmini-2020` | `com.apple.macpro-firewire` | `com.apple.macpro-cylinder` | `com.apple.macpro-2019` | `com.apple.macpro-2019-rackmount` |
+| Symbol name | `airport.express` | `airport.extreme` | `airport.extreme` | `airport.extreme.tower` | `macmini.gen2` | `macmini.gen2` | `macpro.gen1` | `macpro.gen2` | `macpro.gen3` | `macpro.gen3.server` |
+| Symbol | <img src="docs/symbols/symbols/airport.express.svg" alt="airport.express" width="64"> | <img src="docs/symbols/symbols/airport.extreme.svg" alt="airport.extreme" width="64"> | <img src="docs/symbols/symbols/airport.extreme.svg" alt="airport.extreme" width="64"> | <img src="docs/symbols/symbols/airport.extreme.tower.svg" alt="airport.extreme.tower" width="64"> | <img src="docs/symbols/symbols/macmini.gen2.svg" alt="macmini.gen2" width="64"> | <img src="docs/symbols/symbols/macmini.gen2.svg" alt="macmini.gen2" width="64"> | <img src="docs/symbols/symbols/macpro.gen1.svg" alt="macpro.gen1" width="64"> | <img src="docs/symbols/symbols/macpro.gen2.svg" alt="macpro.gen2" width="64"> | <img src="docs/symbols/symbols/macpro.gen3.svg" alt="macpro.gen3" width="64"> | <img src="docs/symbols/symbols/macpro.gen3.server.svg" alt="macpro.gen3.server" width="64"> |
+
+<!--
+The table above is docs/symbols/README.md, made with
+
+    uv run device-icons symbols export --horizontal --no-open \
+      --model AirPort4 --model AirPort5 --model AirPort6 --model AirPort7,120 \
+      --model Macmini8,1 --model Macmini9,1 --model MacPro6,1 --model MacPro5,1 \
+      --model MacPro7,1@ECOLOR=225,225,223 --model MacPro7,1@ECOLOR=226,226,224 \
+      docs/symbols
+
+then the image paths prefixed with docs/symbols/ since this file sits at the repository root.
+-->
+
+To write the SF Symbol of every device type as SVG:
+
+```bash
+uv run device-icons symbols export
+```
+
+`symbols export` resolves each model identifier declared in `CoreTypes.bundle` to its type, as `icons export` does,
+takes the type's symbol name, and reads the symbol from `CoreGlyphs.bundle` through CoreUI, the framework Finder
+draws it with. It writes:
+
+| Path                        | Content                                                                                                                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `symbols/<symbol name>.svg` | the symbol at regular weight and medium scale under its current name, written once: a tight `viewBox`, a `path` filled with `currentColor` per layer, no `width` or `height` |
+| `index.json`                | `symbols` lists each symbol name, its file, and the type and model identifiers that get it; `dropped` lists the model identifiers left out, by reason                        |
+| `README.md`                 | the same data as a table, one row per model identifier: type identifier, symbol name, symbol                                                                                 |
+
+The output goes to `out/`, or to the directory you name, and opens in Finder. An earlier run in that directory is
+replaced; anything else in it makes it stop, as with `icons export`.
+
+A type without a symbol name takes the one of the nearest type it conforms to, the way it takes an icon file. Whether
+Finder inherits symbol names the same way is not verified. Most model identifiers get a symbol this way; the Power Macs
+and Xserves are among those that don't. A legacy symbol name such as `visionpro` is followed to its current name,
+`vision.pro`, through the bundle's `name_aliases.strings`, as `NSImage` does; the file and the `index.json` entry
+carry the current name. `dropped` names the model identifiers left out: `no type` for one no type declares, `no symbol
+name` for one whose type neither declares nor inherits a symbol name, and `no symbol` for one whose symbol name
+`CoreGlyphs.bundle` doesn't have, which happens for a private name or two.
+
+A symbol is drawn in its preferred rendering mode, as `NSImage` draws it by default: hierarchical for most device
+symbols, monochrome for about two in five, the Mac Pro and the Apple TV among them. Hierarchical gives each layer
+the opacity of its level, 1 for primary, 0.5 for secondary, 0.3 for tertiary, so the screen of an iPad is a
+translucent layer under its frame; monochrome draws every layer at 1. The two values are AppKit's; `--secondary`
+and `--tertiary` set others between 0 and 1, say `--tertiary 0.25` for what the SF Symbols app's Copy Image as SVG
+draws. An eraser layer, which the AirPods Pro use to cut the bud behind the ear tip, is cut out of the layers
+before it, so every `path` is the shape you see. An eraser with an opacity of its own, as the arms of `snowflake`
+are, is drawn as well; a group of layers acts as one, its shape their compound.
+
+All SVGs share one unit, so the `viewBox` carries each symbol's size relative to the others: the Mac Pro is 101 by 123,
+the iPhone 63 by 103. Render them at a common scale to keep that, or let each fill its box.
+
+```json
+{
+  "symbols": {
+    "macpro.gen3": {
+      "symbol": "symbols/macpro.gen3.svg",
+      "type_identifiers": ["com.apple.macpro", "com.apple.macpro-2019", "com.apple.macpro-2023"],
+      "model_identifiers": ["Mac14,8", "Mac14,8@ECOLOR=0", "MacPro", "MacPro7,1", "MacPro7,1@ECOLOR=225,225,223"]
+    }
+  }
+}
+```
+
+### A few symbols
+
+`--symbol` takes symbol names, any SF Symbol, declared by a device type or not:
+
+```bash
+uv run device-icons symbols export --no-open --symbol macpro.gen3 --symbol xserve.raid docs/symbols
+```
+
+A symbol no model identifier gets still has its row, with the identifier cells empty, so you can look at it.
+`--horizontal` turns the table on its side as it does for `icons export`.
+
+`--symbol` takes a legacy name as well: `visionpro` and `vision.pro` both write `vision.pro.svg`, with the same model
+identifiers.
+
+`--model` takes model identifiers instead, as it does for `icons export`, and writes their symbols with those model
+identifiers only. You can't combine it with `--symbol`.
+
+`symbols export` stops before it writes anything if a symbol name is not in `CoreGlyphs.bundle`, or if a model
+identifier is not declared, resolves to no type, or gets no symbol. The message names the identifier and says what is
+missing.
+
+To fetch fresh symbols into another project without a checkout:
+
+```bash
+uvx --from git+https://github.com/bkahlert/device-icons device-icons symbols export --no-open path/to/symbols
+```
+
+The symbols are Apple's; see [License](#license) for what their agreement allows.
 
 ## Development
 
@@ -204,35 +321,44 @@ uv run device-icons --help
 ```
 
 CI runs the tests and ruff on macOS 15 and macOS 26. It runs on every push and pull request, and every Monday. The
-Monday run catches a macOS update that moves an icon in `CoreTypes.bundle`, without waiting for a push. `main` only
-accepts pull requests with green checks.
+Monday run catches a macOS update that moves an icon in `CoreTypes.bundle` or changes CoreUI, the private framework
+`symbols export` reads symbols through, without waiting for a push. `main` only accepts pull requests with green checks.
 
 The package is in `src/device_icons/`, the tests in `tests/`. Logic that needs no macOS, such as reading type
 declarations and building the index, is tested on fixtures. The tests replace `dns-sd` and `open` with fakes. Code that
-calls `iconutil` or `osascript` is tested on macOS only.
+calls `iconutil`, `osascript`, or CoreUI is tested on macOS only.
 
 ### Icon lookup
 
-This is how Finder turns a model identifier into an icon. `dump` does the same.
+This is how Finder turns a model identifier into an icon. `icons export` does the same.
 
 - A model identifier is a tag of the tag class `com.apple.device-model-code`. It sits in a type declaration of
   `CoreTypes.bundle` or of a bundle nested in its `Contents/Library`, such as `MobileDevices.bundle`.
 - Several types claim about half the model identifiers, mostly colour variants of one device. LaunchServices picks the
-  winner. `dump` asks the way Finder does, for the preferred type identifier of the tag that conforms to
+  winner. `icons export` asks the way Finder does, for the preferred type identifier of the tag that conforms to
   `public.device`.
 - If no type claims a model identifier, it resolves to a dynamic `dyn.*` type and Finder shows a question mark. The
   same happens for a display, because its type conforms to `public.display`, not `public.device`. That is why
-  `AppleDisplay2,1` and `AppleDisplay18,2` are the "no type" rows of a full dump.
+  `AppleDisplay2,1` and `AppleDisplay18,2` are the "no type" rows of a full run.
 - A type's icon is its icon file. A type without one inherits the icon file of the nearest parent along
   `UTTypeConformsTo`.
 - The sidebar icon comes from one of two places. The first is the `Sidebar….icns` file a type names in
   `_UTTypeTemplateIconFile`. The second is the `sbtp` chunk that newer icon files embed, which `iconutil` unpacks as
-  `template_…` images. `dump` prefers the embedded one. Which one Finder prefers when a type has both is not verified.
+  `template_…` images. `icons export` prefers the embedded one. Which one Finder prefers when a type has both is not
+  verified.
+- A type's symbol is the SF Symbol its symbol name, `UTTypeSymbolName`, names. It lives in `CoreGlyphs.bundle`, in
+  nine weights and three scales, and Finder draws it through CoreUI. `symbols export` asks CoreUI for regular weight
+  and medium scale, and lets a type without a symbol name inherit its nearest parent's, as it does for icon files.
+  Whether Finder inherits symbol names is not verified. CoreUI knows a symbol by its current name only;
+  `CoreGlyphs.bundle` maps legacy names to current ones in `name_aliases.strings`, and `symbols export` follows that
+  map as `NSImage` does. A symbol's `CGPath` in CoreUI concatenates its monochrome layers, erasers included, and loses
+  the levels; `symbols export` reads the layers of the preferred rendering mode one by one instead, and cuts an eraser
+  out of the layers before it with `CGPathCreateCopyBySubtractingPath`.
 - Finder's Network view draws the icon. The sidebar icon appears only under Locations, for a server that is mounted.
 
-`preview` works the other end of this. For each model identifier it registers two proxy records from your Mac: an
-`_smb._tcp` service, and a `_device-info._tcp` service with `model=<identifier>`. Both use the same service instance
-name, which defaults to the identifier. Finder pairs them by that name and draws the icon for the model.
+`icons preview` works the other end of this. For each model identifier it registers two proxy records from your Mac:
+an `_smb._tcp` service, and a `_device-info._tcp` service with `model=<identifier>`. Both use the same service
+instance name, which defaults to the identifier. Finder pairs them by that name and draws the icon for the model.
 
 ### Glossary
 
@@ -255,7 +381,13 @@ snake_case.
 | Sidebar icon              | `SidebarMacPro.icns`                       | The monochrome icon Finder's sidebar draws under Locations. It is either the `Sidebar….icns` file a type names in `_UTTypeTemplateIconFile`, or the `sbtp` chunk embedded in its icon file. Short form: sidebar.                                                                                |
 | Template image            | `template_32x32@2x.png`                    | A monochrome image the system tints. AppKit calls this `isTemplate`. It describes how a sidebar icon is rendered, not what it is. `iconutil` names an embedded sidebar icon's images `template_…`.                                                                                             |
 | Iconset                   | `icon_512x512@2x.png`                      | The folder `iconutil -c iconset` unpacks an icon file into: one PNG per image, named by point size and scale.                                                                                                                                                                                  |
-| Symbol name               | `macpro.gen3`                              | `UTTypeSymbolName`, the SF Symbol of a type. 55 of the 972 device types declare one.                                                                                                                                                                                                           |
+| Symbol name               | `macpro.gen3`                              | `UTTypeSymbolName`, the SF Symbol of a type. Few device types declare one; `symbols export` lets the others inherit the nearest parent's. Some are legacy names, which `name_aliases.strings` maps to current ones; `symbols export` uses the current name.                                    |
+| Symbol                    | `symbols/macpro.gen3.svg`                  | An SF Symbol: the layered vector shape `CoreGlyphs.bundle` holds under a symbol name. `symbols export` writes it as SVG in its preferred rendering mode, a `path` filled with `currentColor` per layer in a tight `viewBox`.                                                                    |
+| Layer                     | `hierarchical-1:tertiary`                  | One of the shapes a symbol is drawn from, in order. In hierarchical rendering a layer has a level, primary, secondary, or tertiary, that sets its opacity. An eraser layer cuts its shape out of the layers before it, and is drawn too if it has an opacity; `symbols export` writes the layers already cut. |
+| Rendering mode            | hierarchical                               | How a symbol's layers are colored. Monochrome draws every layer in one color; hierarchical draws each in that color at its level's opacity, 1, 0.5, or 0.3 unless `--secondary` or `--tertiary` say otherwise. Each symbol prefers one mode, which `NSImage` uses by default and `symbols export` always. Multicolor and palette are not written. |
+| Outline                   | `Outline(layers, bounds)`                  | A symbol's layers as paths at one point size, weight, and scale, with the bounds of what they draw. Typography's word for the shape of a glyph; `symbols export` reads one per symbol from CoreUI, layer by layer.                                                                             |
+| Weight, scale             | regular, medium                            | SF Symbols terms. The nine weights run from ultralight to black, as font weights do. The three scales, small, medium and large, size a symbol next to text of one point size. Finder's defaults are regular and medium.                                                                        |
+| Asset catalog             | `Assets.car`                               | The compiled catalog CoreUI reads. `CoreGlyphs.bundle` keeps the symbols in `Contents/Resources/Assets.car`, next to `CoreTypes.bundle` in `/System/Library/CoreServices`.                                                                                                                      |
 | Service type              | `_device-info._tcp`, `_smb._tcp`           | A DNS-SD service type (RFC 6763). Finder reads `model` from `_device-info._tcp`.                                                                                                                                                                                                               |
 | Service instance name     | `MacPro7,1` in `dns-sd -P MacPro7,1 …`     | The name of one instance of a service type. Finder pairs the `_device-info._tcp` record with the `_smb._tcp` record by it.                                                                                                                                                                     |
 | TXT record                | `model=MacPro7,1`                          | The key-value pairs of a service instance.                                                                                                                                                                                                                                                     |
@@ -286,4 +418,11 @@ Star the project or raise issues. A [PayPal donation](https://www.paypal.me/bkah
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT covers the code. See [LICENSE](LICENSE).
+
+The icons and symbols the tool writes are Apple's. This project exists for educational purposes: it shows how Finder
+turns a model identifier into an icon or a symbol. Apple licenses its system-provided images, SF Symbols included,
+solely for developing applications for Apple-branded products, and forbids their use in app icons, logos, or as
+trademarks; see section 2.10, *System-Provided Images*, of the
+[Xcode and Apple SDKs Agreement](https://www.apple.com/legal/sla/docs/xcode.pdf). Using the images on other platforms
+is not allowed under that agreement.

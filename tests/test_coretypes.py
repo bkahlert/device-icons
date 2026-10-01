@@ -98,6 +98,15 @@ class TestInherit:
 
         assert (result.icon_file, result.sidebar_icon_file) == ("p.icns", "Sg.icns")
 
+    def test_takes_the_symbol_name_of_the_nearest_parent(self):
+        child = TypeDeclaration("a", conforms_to=("b",), icon_file="a.icns", sidebar_icon_file="Sa.icns")
+        parent = TypeDeclaration("b", conforms_to=("c",))
+        grandparent = TypeDeclaration("c", symbol_name="macpro.gen3")
+
+        result = inherit(child, {"a": child, "b": parent, "c": grandparent})
+
+        assert result.symbol_name == "macpro.gen3"
+
     def test_searches_direct_parents_before_grandparents(self):
         child = TypeDeclaration("c", conforms_to=("p1", "p2"))
         p1 = TypeDeclaration("p1", conforms_to=("g",))

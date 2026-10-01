@@ -1,6 +1,6 @@
 import pytest
 
-from device_icons.launchservices import preferred_type_identifiers
+from device_icons.launchservices import declared, preferred_type_identifiers
 
 
 class TestPreferredTypeIdentifiers:
@@ -27,3 +27,15 @@ class TestPreferredTypeIdentifiers:
             result = preferred_type_identifiers([])
 
             assert result == {}
+
+
+class TestDeclared:
+    def test_maps_a_preferred_type_identifier_onto_the_declared_one_ignoring_case(self):
+        result = declared({"J120AP": "com.apple.ipad-pro-a1670-1"}, ["com.apple.ipad-pro-A1670-1"])
+
+        assert result == {"J120AP": "com.apple.ipad-pro-A1670-1"}
+
+    def test_maps_an_undeclared_type_identifier_onto_none(self):
+        result = declared({"Foo1,1": "dyn.age4d4vxtr62z2pbv"}, ["com.apple.mac"])
+
+        assert result == {"Foo1,1": None}
