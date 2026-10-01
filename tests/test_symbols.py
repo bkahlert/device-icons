@@ -236,6 +236,23 @@ class TestSymbols:
         assert "|  |  | `xserve.raid` | <img" in (out / "README.md").read_text()
         assert result.startswith("0 model identifiers: 0 placed under 1 symbols in ")
 
+    def test_writes_a_symbol_declared_by_a_legacy_name_under_its_current_name(self, tmp_path):
+        out = tmp_path / "out"
+
+        symbols(out, ["visionpro"])
+
+        index = json.loads((out / "index.json").read_text())
+        assert list(index["symbols"]) == ["vision.pro"]
+        assert index["symbols"]["vision.pro"]["model_identifiers"]
+        assert (out / "symbols" / "vision.pro.svg").is_file()
+
+    def test_lists_the_model_identifiers_of_a_renamed_symbol_under_its_current_name_too(self, tmp_path):
+        out = tmp_path / "out"
+
+        symbols(out, ["vision.pro"])
+
+        assert json.loads((out / "index.json").read_text())["symbols"]["vision.pro"]["model_identifiers"]
+
     def test_refuses_a_symbol_name_the_catalog_lacks(self, tmp_path):
         out = tmp_path / "out"
 

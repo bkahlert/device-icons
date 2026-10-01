@@ -193,11 +193,11 @@ uv run device-icons symbols
 symbol name, and reads the symbol from `CoreGlyphs.bundle` through CoreUI, the framework Finder draws it with. It
 writes:
 
-| Path                        | Content                                                                                                                                               |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `symbols/<symbol name>.svg` | the symbol at regular weight and medium scale, written once: a tight `viewBox`, a `path` filled with `currentColor` per layer, no `width` or `height` |
-| `index.json`                | `symbols` lists each symbol name, its file, and the type and model identifiers that get it; `dropped` lists the model identifiers left out, by reason |
-| `README.md`                 | the same data as a table, one row per model identifier: type identifier, symbol name, symbol                                                          |
+| Path                        | Content                                                                                                                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `symbols/<symbol name>.svg` | the symbol at regular weight and medium scale under its current name, written once: a tight `viewBox`, a `path` filled with `currentColor` per layer, no `width` or `height` |
+| `index.json`                | `symbols` lists each symbol name, its file, and the type and model identifiers that get it; `dropped` lists the model identifiers left out, by reason                        |
+| `README.md`                 | the same data as a table, one row per model identifier: type identifier, symbol name, symbol                                                                                 |
 
 The output goes to `out/`, or to the directory you name, and opens in Finder. An earlier run in that directory is
 replaced; anything else in it makes `symbols` stop, as with `dump`.
@@ -205,7 +205,8 @@ replaced; anything else in it makes `symbols` stop, as with `dump`.
 A type without a symbol name takes the one of the nearest type it conforms to, the way it takes an icon file. Whether
 Finder inherits symbol names the same way is not verified. Most model identifiers get a symbol this way; the Power Macs
 and Xserves are among those that don't. A legacy symbol name such as `visionpro` is followed to its current name,
-`vision.pro`, through the bundle's `name_aliases.strings`, as `NSImage` does; the file keeps the name the type declares.
+`vision.pro`, through the bundle's `name_aliases.strings`, as `NSImage` does; the file and the `index.json` entry carry the
+current name.
 `dropped` names the model identifiers left out: `no type` for one no type declares, `no symbol name` for one whose type
 neither declares nor inherits a symbol name, and `no symbol` for one whose symbol name `CoreGlyphs.bundle` doesn't
 have, which happens for a private name or two.
@@ -243,8 +244,8 @@ uv run device-icons symbols --no-open --symbol macpro.gen3 --symbol xserve.raid 
 A symbol no model identifier gets still has its row, with the identifier cells empty, so you can look at it.
 `--horizontal` turns the table on its side as it does for `dump`.
 
-`--symbol` matches the name a type declares. Give a renamed symbol by that legacy name, `visionpro` rather than
-`vision.pro`, as `index.json` lists it; under its current name it gets its file, but no model identifiers.
+`--symbol` takes a legacy name as well: `visionpro` and `vision.pro` both write `vision.pro.svg`, with the same model
+identifiers.
 
 `symbols` stops before it writes anything if a symbol name is not in `CoreGlyphs.bundle`. The message names it.
 
@@ -341,7 +342,7 @@ snake_case.
 | Sidebar icon              | `SidebarMacPro.icns`                       | The monochrome icon Finder's sidebar draws under Locations. It is either the `Sidebar….icns` file a type names in `_UTTypeTemplateIconFile`, or the `sbtp` chunk embedded in its icon file. Short form: sidebar.                                                                                |
 | Template image            | `template_32x32@2x.png`                    | A monochrome image the system tints. AppKit calls this `isTemplate`. It describes how a sidebar icon is rendered, not what it is. `iconutil` names an embedded sidebar icon's images `template_…`.                                                                                             |
 | Iconset                   | `icon_512x512@2x.png`                      | The folder `iconutil -c iconset` unpacks an icon file into: one PNG per image, named by point size and scale.                                                                                                                                                                                  |
-| Symbol name               | `macpro.gen3`                              | `UTTypeSymbolName`, the SF Symbol of a type. 55 of the 972 device types declare one; `symbols` lets the others inherit the nearest parent's. Some are legacy names, which `name_aliases.strings` maps to current ones.                                                                         |
+| Symbol name               | `macpro.gen3`                              | `UTTypeSymbolName`, the SF Symbol of a type. 55 of the 972 device types declare one; `symbols` lets the others inherit the nearest parent's. Some are legacy names, which `name_aliases.strings` maps to current ones; `symbols` writes under the current name.                                |
 | Symbol                    | `symbols/macpro.gen3.svg`                  | An SF Symbol: the layered vector shape `CoreGlyphs.bundle` holds under a symbol name. `symbols` writes it as SVG in its preferred rendering mode, a `path` filled with `currentColor` per layer in a tight `viewBox`.                                                                          |
 | Layer                     | `hierarchical-1:tertiary`                  | One of the shapes a symbol is drawn from, in order. In hierarchical rendering a layer has a level, primary, secondary, or tertiary, that sets its opacity. An eraser layer erases what the layers before it drew instead of drawing; `symbols` writes it as a `mask`.                          |
 | Rendering mode            | hierarchical                               | How a symbol's layers are colored. Monochrome draws every layer in one color; hierarchical draws each in that color at its level's opacity, 1, 0.5, or 0.3. Each symbol prefers one mode, which `NSImage` uses by default and `symbols` always. Multicolor and palette are not written.        |

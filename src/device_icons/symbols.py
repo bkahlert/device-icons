@@ -43,10 +43,11 @@ class Layout:
 def layout(names: dict[str, str | None], resolved: dict[str, str | None], outlines: dict[str, Outline | None], given: list[str]) -> Layout:
     """Return the layout: a symbol per name with the types and model identifiers that get it, and a row per model identifier.
 
-    names maps each type identifier to its symbol name, None where it and its parents declare none. resolved maps each
-    model identifier to its preferred type identifier, None for one no type declares. outlines maps each symbol name to
-    its outline, None where CoreGlyphs.bundle has no such symbol. given lists the symbol names asked for, each with an
-    outline; each is placed even if no type has it, and gets a row with empty identifiers if no model identifier gets it.
+    names maps each type identifier to its current symbol name, None where it and its parents declare none. resolved
+    maps each model identifier to its preferred type identifier, None for one no type declares. outlines maps each
+    symbol name to its outline, None where CoreGlyphs.bundle has no such symbol. given lists the current symbol names
+    asked for, each with an outline; each is placed even if no type has it, and gets a row with empty identifiers if no
+    model identifier gets it.
     A model identifier whose type is missing, or has no symbol name, or whose symbol name has no symbol, is dropped
     under that reason. Symbols, their identifiers, rows, and the dropped are sorted; rows are grouped by symbol name.
     """
@@ -108,9 +109,10 @@ def write(out: Path, laid: Layout, horizontal: bool = False) -> None:
 
 
 def symbols(out: Path, symbol_names: list[str] | None = None, horizontal: bool = False) -> str:
-    """Write the symbol of every device type, or the given symbols, into out; return a summary line.
+    """Write the symbol of every device type, or the given symbols, into out under their current names; return a summary line.
 
-    horizontal lays README.md's table out with a column per model identifier.
+    A legacy symbol name, declared by a type or given, is followed to its current one. horizontal lays README.md's
+    table out with a column per model identifier.
 
     Exits before writing if a given symbol name is not in CoreGlyphs.bundle, naming it.
     """
@@ -118,15 +120,17 @@ def symbols(out: Path, symbol_names: list[str] | None = None, horizontal: bool =
     known = sorted({name for declaration in declarations.values() for name in declaration.model_identifiers})
     resolved = declared(launchservices.preferred_type_identifiers(known), declarations)
     chosen = {winner for winner in resolved.values() if winner is not None}
-    names = {type_identifier: coretypes.inherit(declarations[type_identifier], declarations).symbol_name for type_identifier in chosen}
-    needed = set(symbol_names) if symbol_names else {name for name in names.values() if name is not None}
+    declared_names = {type_identifier: coretypes.inherit(declarations[type_identifier], declarations).symbol_name for type_identifier in chosen}
+    names = {type_identifier: coreglyphs.current(name) if name is not None else None for type_identifier, name in declared_names.items()}
+    given = {name: coreglyphs.current(name) for name in symbol_names or []}
+    needed = set(given.values()) if given else {name for name in names.values() if name is not None}
     outlines = {name: coreglyphs.outline(name) for name in sorted(needed)}
-    if symbol_names and (missing := [name for name in symbol_names if outlines[name] is None]):
+    if missing := [name for name, current_name in given.items() if outlines[current_name] is None]:
         sys.exit(f"no symbol in {coreglyphs.CATALOG}: {', '.join(missing)}")
-    if symbol_names:
+    if given:
         names = {type_identifier: name for type_identifier, name in names.items() if name in needed}
         resolved = {model_identifier: winner for model_identifier, winner in resolved.items() if winner in names}
-    laid = layout(names, resolved, outlines, symbol_names or [])
+    laid = layout(names, resolved, outlines, list(given.values()))
     write(out, laid, horizontal)
     placed = sum(len(entry["model_identifiers"]) for entry in laid.symbols.values())
     dropped = ", ".join(f"{len(identifiers)} {reason}" for reason, identifiers in laid.dropped.items())
