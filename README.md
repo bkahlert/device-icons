@@ -247,7 +247,11 @@ A symbol no model identifier gets still has its row, with the identifier cells e
 `--symbol` takes a legacy name as well: `visionpro` and `vision.pro` both write `vision.pro.svg`, with the same model
 identifiers.
 
-`symbols` stops before it writes anything if a symbol name is not in `CoreGlyphs.bundle`. The message names it.
+`--model` takes model identifiers instead, as it does for `dump`, and writes their symbols with those model identifiers
+only. You can't combine it with `--symbol`.
+
+`symbols` stops before it writes anything if a symbol name is not in `CoreGlyphs.bundle`, or if a model identifier is
+not declared, resolves to no type, or gets no symbol. The message names the identifier and says what is missing.
 
 To fetch fresh symbols into another project without a checkout:
 

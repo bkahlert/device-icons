@@ -34,12 +34,20 @@ def parser() -> argparse.ArgumentParser:
     dumping.add_argument("--horizontal", action="store_true", help="lay README.md's table out with a column per model identifier")
     symbolling = commands.add_parser("symbols", help="write the SF Symbol of every device type as SVG, with the model identifiers that get it")
     symbolling.add_argument("out", nargs="?", type=Path, default=Path("out"), help="output directory, emptied first (default: out)")
-    symbolling.add_argument(
+    some = symbolling.add_mutually_exclusive_group()
+    some.add_argument(
         "--symbol",
         dest="symbol_names",
         metavar="SYMBOL_NAME",
         action="append",
         help="write only this symbol, with the model identifiers that get it; repeatable, any SF Symbol",
+    )
+    some.add_argument(
+        "--model",
+        dest="model_identifiers",
+        metavar="MODEL_IDENTIFIER",
+        action="append",
+        help="write only the symbol of this model identifier, with this model identifier; repeatable",
     )
     symbolling.add_argument(
         "--secondary", type=float, default=coreglyphs.HIERARCHY[1], metavar="OPACITY", help="opacity of a secondary layer (default: 0.5, as AppKit draws it)"
@@ -67,7 +75,16 @@ def main(argv: list[str] | None = None) -> int:
         if arguments.open:
             finder.show(arguments.out)
     elif arguments.command == "symbols":
-        print(symbols.symbols(arguments.out, arguments.symbol_names, arguments.horizontal, arguments.secondary, arguments.tertiary))
+        print(
+            symbols.symbols(
+                arguments.out,
+                arguments.symbol_names,
+                arguments.model_identifiers,
+                horizontal=arguments.horizontal,
+                secondary=arguments.secondary,
+                tertiary=arguments.tertiary,
+            )
+        )
         if arguments.open:
             finder.show(arguments.out)
     else:

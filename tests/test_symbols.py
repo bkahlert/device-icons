@@ -275,6 +275,35 @@ class TestSymbols:
 
         assert not out.exists()
 
+    class TestOnModelIdentifiers:
+        def test_writes_the_symbols_of_the_given_model_identifiers_only(self, tmp_path):
+            out = tmp_path / "out"
+
+            result = symbols(out, model_identifiers=["MacPro7,1", "Macmini9,1"])
+
+            index = json.loads((out / "index.json").read_text())
+            assert {name: entry["model_identifiers"] for name, entry in index["symbols"].items()} == {
+                "macmini.gen2": ["Macmini9,1"],
+                "macpro.gen3": ["MacPro7,1"],
+            }
+            assert result.startswith("2 model identifiers: 2 placed under 2 symbols in ")
+
+        def test_refuses_one_that_is_not_declared(self, tmp_path):
+            out = tmp_path / "out"
+
+            with pytest.raises(SystemExit, match=r"^not declared in .*: Foo1,1$"):
+                symbols(out, model_identifiers=["Foo1,1"])
+
+            assert not out.exists()
+
+        def test_refuses_one_whose_type_has_no_symbol_name(self, tmp_path):
+            out = tmp_path / "out"
+
+            with pytest.raises(SystemExit, match=r"^no symbol name in .*: Xserve3,1$"):
+                symbols(out, model_identifiers=["Xserve3,1"])
+
+            assert not out.exists()
+
     def test_writes_every_device_type_by_default(self, tmp_path):
         out = tmp_path / "out"
 

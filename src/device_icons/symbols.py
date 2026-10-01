@@ -114,17 +114,28 @@ def write(out: Path, laid: Layout, horizontal: bool = False) -> None:
     (out / "README.md").write_text(markdown(laid.rows, horizontal))
 
 
-def symbols(out: Path, symbol_names: list[str] | None = None, horizontal: bool = False, secondary: float = HIERARCHY[1], tertiary: float = HIERARCHY[2]) -> str:
-    """Write the symbol of every device type, or the given symbols, into out under their current names; return a summary line.
+def symbols(
+    out: Path,
+    symbol_names: list[str] | None = None,
+    model_identifiers: list[str] | None = None,
+    horizontal: bool = False,
+    secondary: float = HIERARCHY[1],
+    tertiary: float = HIERARCHY[2],
+) -> str:
+    """Write the symbol of every device type, of the given symbols, or of the given model identifiers, into out; return a summary line.
 
-    A legacy symbol name, declared by a type or given, is followed to its current one. horizontal lays README.md's
-    table out with a column per model identifier. secondary and tertiary are the opacities of layers at those levels.
+    Symbols are written under their current names; a legacy symbol name, declared by a type or given, is followed to
+    its current one. horizontal lays README.md's table out with a column per model identifier. secondary and tertiary
+    are the opacities of layers at those levels.
 
-    Exits before writing if a given symbol name is not in CoreGlyphs.bundle, naming it.
+    Exits before writing if a given symbol name is not in CoreGlyphs.bundle, or a given model identifier is not
+    declared, resolves to no type, or gets no symbol, naming the identifier under the reason.
     """
     declarations = coretypes.read(coretypes.BUNDLE)
     known = sorted({name for declaration in declarations.values() for name in declaration.model_identifiers})
-    resolved = declared(launchservices.preferred_type_identifiers(known), declarations)
+    if unknown := [name for name in model_identifiers or [] if name not in known]:
+        sys.exit(f"not declared in {coretypes.BUNDLE}: {', '.join(unknown)}")
+    resolved = declared(launchservices.preferred_type_identifiers(model_identifiers or known), declarations)
     chosen = {winner for winner in resolved.values() if winner is not None}
     declared_names = {type_identifier: coretypes.inherit(declarations[type_identifier], declarations).symbol_name for type_identifier in chosen}
     names = {type_identifier: coreglyphs.current(name) if name is not None else None for type_identifier, name in declared_names.items()}
@@ -137,6 +148,9 @@ def symbols(out: Path, symbol_names: list[str] | None = None, horizontal: bool =
         names = {type_identifier: name for type_identifier, name in names.items() if name in needed}
         resolved = {model_identifier: winner for model_identifier, winner in resolved.items() if winner in names}
     laid = layout(names, resolved, outlines, list(given.values()), (HIERARCHY[0], secondary, tertiary))
+    if model_identifiers and any(laid.dropped.values()):
+        where = {"no symbol": coreglyphs.CATALOG}
+        sys.exit("\n".join(f"{reason} in {where.get(reason, coretypes.BUNDLE)}: {', '.join(names)}" for reason, names in laid.dropped.items() if names))
     write(out, laid, horizontal)
     placed = sum(len(entry["model_identifiers"]) for entry in laid.symbols.values())
     dropped = ", ".join(f"{len(identifiers)} {reason}" for reason, identifiers in laid.dropped.items())

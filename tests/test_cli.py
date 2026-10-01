@@ -60,13 +60,31 @@ class TestParser:
         def test_defaults_to_every_device_type_into_out(self):
             result = parser().parse_args(["symbols"])
 
-            assert (result.command, result.out, result.symbol_names, result.open, result.horizontal) == ("symbols", Path("out"), None, True, False)
+            assert (result.command, result.out, result.symbol_names, result.model_identifiers, result.open, result.horizontal) == (
+                "symbols",
+                Path("out"),
+                None,
+                None,
+                True,
+                False,
+            )
 
         def test_collects_repeated_symbol_names_and_the_output_directory(self):
             result = parser().parse_args(["symbols", "--symbol", "macpro.gen3", "--symbol", "xserve.raid", "docs/symbols"])
 
             assert result.symbol_names == ["macpro.gen3", "xserve.raid"]
             assert result.out == Path("docs/symbols")
+
+        def test_collects_repeated_model_identifiers(self):
+            result = parser().parse_args(["symbols", "--model", "MacPro7,1", "--model", "Xserve3,1"])
+
+            assert result.model_identifiers == ["MacPro7,1", "Xserve3,1"]
+
+        def test_refuses_symbol_and_model_together(self):
+            with pytest.raises(SystemExit) as exit:
+                parser().parse_args(["symbols", "--symbol", "macpro.gen3", "--model", "MacPro7,1"])
+
+            assert exit.value.code == 2
 
         def test_defaults_the_level_opacities_to_appkits(self):
             result = parser().parse_args(["symbols"])
@@ -247,6 +265,17 @@ class TestMain:
                 main(["symbols", "--horizontal", "--symbol", "macpro.gen3", str(out)])
 
                 assert "| Symbol name | `macpro.gen3` |" in (out / "README.md").read_text()
+
+        class TestModel:
+            def test_writes_only_that_model_identifier(self, tmp_path, fake_command):
+                fake_command("open")
+                out = tmp_path / "out"
+
+                main(["symbols", "--model", "MacPro7,1", str(out)])
+
+                readme = (out / "README.md").read_text()
+                assert "| `MacPro7,1` |" in readme
+                assert "Mac14,8" not in readme
 
         class TestTertiary:
             def test_sets_the_opacity_of_a_tertiary_layer(self, tmp_path, fake_command):
