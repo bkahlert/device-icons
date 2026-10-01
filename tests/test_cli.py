@@ -18,54 +18,54 @@ class TestParser:
 
             assert exit.value.code == 2
 
-        class TestWrite:
+        class TestExport:
             def test_defaults_to_every_type_into_out(self):
-                result = parser().parse_args(["icons", "write"])
+                result = parser().parse_args(["icons", "export"])
 
                 assert (result.command, result.action, result.out, result.type_identifiers, result.model_identifiers) == (
                     "icons",
-                    "write",
+                    "export",
                     Path("out"),
                     None,
                     None,
                 )
 
             def test_collects_repeated_types_and_the_output_directory(self):
-                result = parser().parse_args(["icons", "write", "--type", "com.apple.macpro-2019", "--type", "com.apple.xserve-xeon", "docs/icons"])
+                result = parser().parse_args(["icons", "export", "--type", "com.apple.macpro-2019", "--type", "com.apple.xserve-xeon", "docs/icons"])
 
                 assert result.type_identifiers == ["com.apple.macpro-2019", "com.apple.xserve-xeon"]
                 assert result.out == Path("docs/icons")
 
             def test_collects_repeated_model_identifiers(self):
-                result = parser().parse_args(["icons", "write", "--model", "MacPro7,1", "--model", "Xserve3,1"])
+                result = parser().parse_args(["icons", "export", "--model", "MacPro7,1", "--model", "Xserve3,1"])
 
                 assert result.model_identifiers == ["MacPro7,1", "Xserve3,1"]
 
             def test_refuses_type_and_model_together(self):
                 with pytest.raises(SystemExit) as exit:
-                    parser().parse_args(["icons", "write", "--type", "com.apple.macpro-2019", "--model", "Xserve3,1"])
+                    parser().parse_args(["icons", "export", "--type", "com.apple.macpro-2019", "--model", "Xserve3,1"])
 
                 assert exit.value.code == 2
 
             def test_opens_the_output_directory_by_default(self):
-                result = parser().parse_args(["icons", "write"])
+                result = parser().parse_args(["icons", "export"])
 
                 assert result.open is True
 
             def test_lays_the_table_out_vertically_by_default(self):
-                result = parser().parse_args(["icons", "write"])
+                result = parser().parse_args(["icons", "export"])
 
                 assert result.horizontal is False
 
             class TestNoOpen:
                 def test_turns_opening_off(self):
-                    result = parser().parse_args(["icons", "write", "--no-open"])
+                    result = parser().parse_args(["icons", "export", "--no-open"])
 
                     assert result.open is False
 
             class TestHorizontal:
                 def test_turns_the_table(self):
-                    result = parser().parse_args(["icons", "write", "--horizontal"])
+                    result = parser().parse_args(["icons", "export", "--horizontal"])
 
                     assert result.horizontal is True
 
@@ -109,13 +109,13 @@ class TestParser:
 
             assert exit.value.code == 2
 
-        class TestWrite:
+        class TestExport:
             def test_defaults_to_every_device_type_into_out(self):
-                result = parser().parse_args(["symbols", "write"])
+                result = parser().parse_args(["symbols", "export"])
 
                 assert (result.command, result.action, result.out, result.symbol_names, result.model_identifiers, result.open, result.horizontal) == (
                     "symbols",
-                    "write",
+                    "export",
                     Path("out"),
                     None,
                     None,
@@ -124,41 +124,41 @@ class TestParser:
                 )
 
             def test_collects_repeated_symbol_names_and_the_output_directory(self):
-                result = parser().parse_args(["symbols", "write", "--symbol", "macpro.gen3", "--symbol", "xserve.raid", "docs/symbols"])
+                result = parser().parse_args(["symbols", "export", "--symbol", "macpro.gen3", "--symbol", "xserve.raid", "docs/symbols"])
 
                 assert result.symbol_names == ["macpro.gen3", "xserve.raid"]
                 assert result.out == Path("docs/symbols")
 
             def test_collects_repeated_model_identifiers(self):
-                result = parser().parse_args(["symbols", "write", "--model", "MacPro7,1", "--model", "Xserve3,1"])
+                result = parser().parse_args(["symbols", "export", "--model", "MacPro7,1", "--model", "Xserve3,1"])
 
                 assert result.model_identifiers == ["MacPro7,1", "Xserve3,1"]
 
             def test_refuses_symbol_and_model_together(self):
                 with pytest.raises(SystemExit) as exit:
-                    parser().parse_args(["symbols", "write", "--symbol", "macpro.gen3", "--model", "MacPro7,1"])
+                    parser().parse_args(["symbols", "export", "--symbol", "macpro.gen3", "--model", "MacPro7,1"])
 
                 assert exit.value.code == 2
 
             def test_defaults_the_level_opacities_to_appkits(self):
-                result = parser().parse_args(["symbols", "write"])
+                result = parser().parse_args(["symbols", "export"])
 
                 assert (result.secondary, result.tertiary) == (0.5, 0.3)
 
             def test_takes_the_level_opacities(self):
-                result = parser().parse_args(["symbols", "write", "--secondary", "0.6", "--tertiary", "0.25"])
+                result = parser().parse_args(["symbols", "export", "--secondary", "0.6", "--tertiary", "0.25"])
 
                 assert (result.secondary, result.tertiary) == (0.6, 0.25)
 
             class TestNoOpen:
                 def test_turns_opening_off(self):
-                    result = parser().parse_args(["symbols", "write", "--no-open"])
+                    result = parser().parse_args(["symbols", "export", "--no-open"])
 
                     assert result.open is False
 
             class TestHorizontal:
                 def test_turns_the_table(self):
-                    result = parser().parse_args(["symbols", "write", "--horizontal"])
+                    result = parser().parse_args(["symbols", "export", "--horizontal"])
 
                     assert result.horizontal is True
 
@@ -174,7 +174,7 @@ class TestMain:
         monkeypatch.setattr("sys.platform", "linux")
 
         with pytest.raises(SystemExit, match="macOS only"):
-            main(["icons", "write"])
+            main(["icons", "export"])
 
     class TestIcons:
         class TestPreview:
@@ -209,12 +209,12 @@ class TestMain:
                     assert not opening.log.exists()
 
         @pytest.mark.macos
-        class TestWrite:
+        class TestExport:
             def test_writes_the_icons_and_prints_the_summary(self, tmp_path, capsys, fake_command):
                 fake_command("open")
                 out = tmp_path / "out"
 
-                result = main(["icons", "write", "--type", "com.apple.xserve-xeon", str(out)])
+                result = main(["icons", "export", "--type", "com.apple.xserve-xeon", str(out)])
 
                 assert result == 0
                 assert re.match(r"\d+ model identifiers: \d+ placed under 1 sidebar icons and 1 icons in ", capsys.readouterr().out)
@@ -224,7 +224,7 @@ class TestMain:
                 opening = fake_command("open")
                 out = tmp_path / "out"
 
-                main(["icons", "write", "--type", "com.apple.xserve-xeon", str(out)])
+                main(["icons", "export", "--type", "com.apple.xserve-xeon", str(out)])
 
                 assert [arguments for _, arguments in opening.calls()] == [str(out)]
 
@@ -232,7 +232,7 @@ class TestMain:
                 def test_leaves_finder_alone(self, tmp_path, fake_command):
                     opening = fake_command("open")
 
-                    main(["icons", "write", "--no-open", "--type", "com.apple.xserve-xeon", str(tmp_path / "out")])
+                    main(["icons", "export", "--no-open", "--type", "com.apple.xserve-xeon", str(tmp_path / "out")])
 
                     assert not opening.log.exists()
 
@@ -241,7 +241,7 @@ class TestMain:
                     fake_command("open")
                     out = tmp_path / "out"
 
-                    main(["icons", "write", "--model", "Xserve3,1", str(out)])
+                    main(["icons", "export", "--model", "Xserve3,1", str(out)])
 
                     readme = (out / "README.md").read_text()
                     assert "| `Xserve3,1` |" in readme
@@ -252,18 +252,18 @@ class TestMain:
                     fake_command("open")
                     out = tmp_path / "out"
 
-                    main(["icons", "write", "--horizontal", "--type", "com.apple.xserve-xeon", str(out)])
+                    main(["icons", "export", "--horizontal", "--type", "com.apple.xserve-xeon", str(out)])
 
                     assert "| Type identifier | `com.apple.xserve-xeon` |" in (out / "README.md").read_text()
 
     @pytest.mark.macos
     class TestSymbols:
-        class TestWrite:
+        class TestExport:
             def test_writes_the_symbols_and_prints_the_summary(self, tmp_path, capsys, fake_command):
                 fake_command("open")
                 out = tmp_path / "out"
 
-                result = main(["symbols", "write", "--symbol", "macpro.gen3", str(out)])
+                result = main(["symbols", "export", "--symbol", "macpro.gen3", str(out)])
 
                 assert result == 0
                 assert re.match(r"\d+ model identifiers: \d+ placed under 1 symbols in ", capsys.readouterr().out)
@@ -273,7 +273,7 @@ class TestMain:
                 opening = fake_command("open")
                 out = tmp_path / "out"
 
-                main(["symbols", "write", "--symbol", "macpro.gen3", str(out)])
+                main(["symbols", "export", "--symbol", "macpro.gen3", str(out)])
 
                 assert [arguments for _, arguments in opening.calls()] == [str(out)]
 
@@ -281,7 +281,7 @@ class TestMain:
                 def test_leaves_finder_alone(self, tmp_path, fake_command):
                     opening = fake_command("open")
 
-                    main(["symbols", "write", "--no-open", "--symbol", "macpro.gen3", str(tmp_path / "out")])
+                    main(["symbols", "export", "--no-open", "--symbol", "macpro.gen3", str(tmp_path / "out")])
 
                     assert not opening.log.exists()
 
@@ -290,7 +290,7 @@ class TestMain:
                     fake_command("open")
                     out = tmp_path / "out"
 
-                    main(["symbols", "write", "--horizontal", "--symbol", "macpro.gen3", str(out)])
+                    main(["symbols", "export", "--horizontal", "--symbol", "macpro.gen3", str(out)])
 
                     assert "| Symbol name | `macpro.gen3` |" in (out / "README.md").read_text()
 
@@ -299,7 +299,7 @@ class TestMain:
                     fake_command("open")
                     out = tmp_path / "out"
 
-                    main(["symbols", "write", "--model", "MacPro7,1", str(out)])
+                    main(["symbols", "export", "--model", "MacPro7,1", str(out)])
 
                     readme = (out / "README.md").read_text()
                     assert "| `MacPro7,1` |" in readme
@@ -310,7 +310,7 @@ class TestMain:
                     fake_command("open")
                     out = tmp_path / "out"
 
-                    main(["symbols", "write", "--tertiary", "0.25", "--symbol", "ipad", str(out)])
+                    main(["symbols", "export", "--tertiary", "0.25", "--symbol", "ipad", str(out)])
 
                     assert 'fill-opacity="0.25"' in (out / "symbols" / "ipad.svg").read_text()
 

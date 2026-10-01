@@ -1,4 +1,4 @@
-"""What icons write and symbols write share: the output directory, cleared before a run, and the Markdown table."""
+"""What icons export and symbols export share: the output directory, cleared before a run, and the Markdown table."""
 
 from __future__ import annotations
 
