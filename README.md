@@ -183,6 +183,27 @@ previewed host does not exist.
 
 ## Symbols
 
+Here are the symbols of ten of the eleven devices above, laid out by `symbols --horizontal`; the Xserve's type
+declares no symbol name:
+
+| Model identifier | `AirPort4` | `AirPort5` | `AirPort6` | `AirPort7,120` | `Macmini8,1` | `Macmini9,1` | `MacPro5,1` | `MacPro6,1` | `MacPro7,1`<br/>`@ECOLOR=`<br/>`225,225,223` | `MacPro7,1`<br/>`@ECOLOR=`<br/>`226,226,224` |
+| --- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| Type identifier | `com.apple.airport-express` | `com.apple.airport` | `com.apple.time-capsule` | `com.apple.airport-extreme-tower` | `com.apple.macmini-2018` | `com.apple.macmini-2020` | `com.apple.macpro-firewire` | `com.apple.macpro-cylinder` | `com.apple.macpro-2019` | `com.apple.macpro-2019-rackmount` |
+| Symbol name | `airport.express` | `airport.extreme` | `airport.extreme` | `airport.extreme.tower` | `macmini.gen2` | `macmini.gen2` | `macpro.gen1` | `macpro.gen2` | `macpro.gen3` | `macpro.gen3.server` |
+| Symbol | <img src="docs/symbols/symbols/airport.express.svg" alt="airport.express" width="64"> | <img src="docs/symbols/symbols/airport.extreme.svg" alt="airport.extreme" width="64"> | <img src="docs/symbols/symbols/airport.extreme.svg" alt="airport.extreme" width="64"> | <img src="docs/symbols/symbols/airport.extreme.tower.svg" alt="airport.extreme.tower" width="64"> | <img src="docs/symbols/symbols/macmini.gen2.svg" alt="macmini.gen2" width="64"> | <img src="docs/symbols/symbols/macmini.gen2.svg" alt="macmini.gen2" width="64"> | <img src="docs/symbols/symbols/macpro.gen1.svg" alt="macpro.gen1" width="64"> | <img src="docs/symbols/symbols/macpro.gen2.svg" alt="macpro.gen2" width="64"> | <img src="docs/symbols/symbols/macpro.gen3.svg" alt="macpro.gen3" width="64"> | <img src="docs/symbols/symbols/macpro.gen3.server.svg" alt="macpro.gen3.server" width="64"> |
+
+<!--
+The table above is docs/symbols/README.md, made with
+
+    uv run device-icons symbols --horizontal --no-open \
+      --model AirPort4 --model AirPort5 --model AirPort6 --model AirPort7,120 \
+      --model Macmini8,1 --model Macmini9,1 --model MacPro6,1 --model MacPro5,1 \
+      --model MacPro7,1@ECOLOR=225,225,223 --model MacPro7,1@ECOLOR=226,226,224 \
+      docs/symbols
+
+then the image paths prefixed with docs/symbols/ since this file sits at the repository root.
+-->
+
 To write the SF Symbol of every device type as SVG:
 
 ```bash
