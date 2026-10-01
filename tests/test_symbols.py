@@ -67,6 +67,13 @@ class TestLayout:
 
         assert list(result.symbols) == ["macpro.gen3", "xserve"]
 
+    class TestOnHierarchy:
+        def test_writes_the_svgs_with_the_given_opacities(self):
+            result = layout({"com.apple.ipad": "ipad"}, {}, {"ipad": SCREEN}, [], hierarchy=(1.0, 0.5, 0.25))
+
+            assert result.files == {Path("symbols/ipad.svg"): svg(SCREEN, hierarchy=(1.0, 0.5, 0.25))}
+            assert 'fill-opacity="0.25"' in result.files[Path("symbols/ipad.svg")]
+
     class TestOnGivenNames:
         def test_places_a_given_name_no_type_declares_with_a_row_of_its_own(self):
             result = layout({}, {}, {"xserve.raid": SQUARE}, ["xserve.raid"])
@@ -253,6 +260,13 @@ class TestSymbols:
 
         assert json.loads((out / "index.json").read_text())["symbols"]["vision.pro"]["model_identifiers"]
 
+    def test_writes_a_tertiary_layer_at_the_given_opacity(self, tmp_path):
+        out = tmp_path / "out"
+
+        symbols(out, ["ipad"], tertiary=0.25)
+
+        assert 'fill-opacity="0.25"' in (out / "symbols" / "ipad.svg").read_text()
+
     def test_refuses_a_symbol_name_the_catalog_lacks(self, tmp_path):
         out = tmp_path / "out"
 
@@ -275,3 +289,4 @@ class TestSymbols:
 
 
 SQUARE = Outline([Layer([(MOVE, [(0.0, 0.0)]), (LINE, [(1.0, 0.0)]), (LINE, [(1.0, 1.0)]), (LINE, [(0.0, 1.0)]), (CLOSE, [])])], (0.0, 0.0, 1.0, 1.0))
+SCREEN = Outline([Layer([(MOVE, [(0.0, 0.0)]), (LINE, [(1.0, 1.0)])], level=2)], (0.0, 0.0, 1.0, 1.0))

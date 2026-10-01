@@ -205,8 +205,8 @@ replaced; anything else in it makes `symbols` stop, as with `dump`.
 A type without a symbol name takes the one of the nearest type it conforms to, the way it takes an icon file. Whether
 Finder inherits symbol names the same way is not verified. Most model identifiers get a symbol this way; the Power Macs
 and Xserves are among those that don't. A legacy symbol name such as `visionpro` is followed to its current name,
-`vision.pro`, through the bundle's `name_aliases.strings`, as `NSImage` does; the file and the `index.json` entry carry the
-current name.
+`vision.pro`, through the bundle's `name_aliases.strings`, as `NSImage` does; the file and the `index.json` entry
+carry the current name.
 `dropped` names the model identifiers left out: `no type` for one no type declares, `no symbol name` for one whose type
 neither declares nor inherits a symbol name, and `no symbol` for one whose symbol name `CoreGlyphs.bundle` doesn't
 have, which happens for a private name or two.
@@ -214,9 +214,9 @@ have, which happens for a private name or two.
 A symbol is drawn in its preferred rendering mode, as `NSImage` draws it by default: hierarchical for most device
 symbols, monochrome for the Mac Pro and the Apple TV. Hierarchical gives each layer the opacity of its level, 1 for
 primary, 0.5 for secondary, 0.3 for tertiary, so the screen of an iPad is a translucent layer under its frame;
-monochrome draws every layer at 1. These are AppKit's values; the SF Symbols app's Copy Image as SVG draws tertiary at
-0.25. An eraser layer, which the AirPods Pro use to cut the bud behind the ear tip, is cut out of the layers before it, so
-every `path` is the shape you see.
+monochrome draws every layer at 1. The two values are AppKit's; `--secondary` and `--tertiary` set others, say
+`--tertiary 0.25` for what the SF Symbols app's Copy Image as SVG draws. An eraser layer, which the AirPods Pro use
+to cut the bud behind the ear tip, is cut out of the layers before it, so every `path` is the shape you see.
 
 All SVGs share one unit, so the `viewBox` carries each symbol's size relative to the others: the Mac Pro is 101 by 123,
 the iPhone 63 by 103. Render them at a common scale to keep that, or let each fill its box.
@@ -346,7 +346,7 @@ snake_case.
 | Symbol name               | `macpro.gen3`                              | `UTTypeSymbolName`, the SF Symbol of a type. 55 of the 972 device types declare one; `symbols` lets the others inherit the nearest parent's. Some are legacy names, which `name_aliases.strings` maps to current ones; `symbols` writes under the current name.                                |
 | Symbol                    | `symbols/macpro.gen3.svg`                  | An SF Symbol: the layered vector shape `CoreGlyphs.bundle` holds under a symbol name. `symbols` writes it as SVG in its preferred rendering mode, a `path` filled with `currentColor` per layer in a tight `viewBox`.                                                                          |
 | Layer                     | `hierarchical-1:tertiary`                  | One of the shapes a symbol is drawn from, in order. In hierarchical rendering a layer has a level, primary, secondary, or tertiary, that sets its opacity. An eraser layer cuts its shape out of the layers before it instead of drawing; `symbols` writes those layers already cut.           |
-| Rendering mode            | hierarchical                               | How a symbol's layers are colored. Monochrome draws every layer in one color; hierarchical draws each in that color at its level's opacity, 1, 0.5, or 0.3. Each symbol prefers one mode, which `NSImage` uses by default and `symbols` always. Multicolor and palette are not written.        |
+| Rendering mode            | hierarchical                               | How a symbol's layers are colored. Monochrome draws every layer in one color; hierarchical draws each in that color at its level's opacity, 1, 0.5, or 0.3 unless `--secondary` or `--tertiary` say otherwise. Each symbol prefers one mode, which `NSImage` uses by default and `symbols` always. Multicolor and palette are not written. |
 | Weight, scale             | regular, medium                            | SF Symbols terms. The nine weights run from ultralight to black, as font weights do. The three scales, small, medium and large, size a symbol next to text of one point size. Finder's defaults are regular and medium.                                                                        |
 | Asset catalog             | `Assets.car`                               | The compiled catalog CoreUI reads. `CoreGlyphs.bundle` keeps the symbols in `Contents/Resources/Assets.car`, next to `CoreTypes.bundle` in `/System/Library/CoreServices`.                                                                                                                      |
 | Service type              | `_device-info._tcp`, `_smb._tcp`           | A DNS-SD service type (RFC 6763). Finder reads `model` from `_device-info._tcp`.                                                                                                                                                                                                               |

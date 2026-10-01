@@ -68,6 +68,16 @@ class TestParser:
             assert result.symbol_names == ["macpro.gen3", "xserve.raid"]
             assert result.out == Path("docs/symbols")
 
+        def test_defaults_the_level_opacities_to_appkits(self):
+            result = parser().parse_args(["symbols"])
+
+            assert (result.secondary, result.tertiary) == (0.5, 0.3)
+
+        def test_takes_the_level_opacities(self):
+            result = parser().parse_args(["symbols", "--secondary", "0.6", "--tertiary", "0.25"])
+
+            assert (result.secondary, result.tertiary) == (0.6, 0.25)
+
         class TestNoOpen:
             def test_turns_opening_off(self):
                 result = parser().parse_args(["symbols", "--no-open"])
@@ -237,6 +247,15 @@ class TestMain:
                 main(["symbols", "--horizontal", "--symbol", "macpro.gen3", str(out)])
 
                 assert "| Symbol name | `macpro.gen3` |" in (out / "README.md").read_text()
+
+        class TestTertiary:
+            def test_sets_the_opacity_of_a_tertiary_layer(self, tmp_path, fake_command):
+                fake_command("open")
+                out = tmp_path / "out"
+
+                main(["symbols", "--tertiary", "0.25", "--symbol", "ipad", str(out)])
+
+                assert 'fill-opacity="0.25"' in (out / "symbols" / "ipad.svg").read_text()
 
 
 def preview_as_on_macos(*arguments: str) -> int:

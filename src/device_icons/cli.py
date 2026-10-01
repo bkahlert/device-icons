@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from device_icons import dump, finder, preview, symbols
+from device_icons import coreglyphs, dump, finder, preview, symbols
 
 
 def parser() -> argparse.ArgumentParser:
@@ -41,6 +41,12 @@ def parser() -> argparse.ArgumentParser:
         action="append",
         help="write only this symbol, with the model identifiers that get it; repeatable, any SF Symbol",
     )
+    symbolling.add_argument(
+        "--secondary", type=float, default=coreglyphs.HIERARCHY[1], metavar="OPACITY", help="opacity of a secondary layer (default: 0.5, as AppKit draws it)"
+    )
+    symbolling.add_argument(
+        "--tertiary", type=float, default=coreglyphs.HIERARCHY[2], metavar="OPACITY", help="opacity of a tertiary layer (default: 0.3, as AppKit draws it)"
+    )
     symbolling.add_argument("--no-open", dest="open", action="store_false", help="do not open the output directory in Finder")
     symbolling.add_argument("--horizontal", action="store_true", help="lay README.md's table out with a column per model identifier")
     previewing = commands.add_parser("preview", help="show model identifiers as devices in Finder's Network view until Ctrl-C")
@@ -61,7 +67,7 @@ def main(argv: list[str] | None = None) -> int:
         if arguments.open:
             finder.show(arguments.out)
     elif arguments.command == "symbols":
-        print(symbols.symbols(arguments.out, arguments.symbol_names, arguments.horizontal))
+        print(symbols.symbols(arguments.out, arguments.symbol_names, arguments.horizontal, arguments.secondary, arguments.tertiary))
         if arguments.open:
             finder.show(arguments.out)
     else:

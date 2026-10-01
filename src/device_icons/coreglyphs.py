@@ -94,17 +94,17 @@ def resolve(symbol_name: str, aliases: dict[str, str]) -> str:
     return symbol_name
 
 
-def svg(outline: Outline) -> str:
+def svg(outline: Outline, hierarchy: tuple[float, float, float] = HIERARCHY) -> str:
     """Return the symbol as an SVG document: a tight viewBox with the layers moved to its origin, a path filled with currentColor per layer.
 
-    A layer's opacity is its own times HIERARCHY's for its level; below 1, it is the path's fill-opacity. Coordinates
-    are rounded to two decimals.
+    hierarchy gives the opacity of a primary, secondary, and tertiary layer. A layer's opacity is its own times its
+    level's; below 1, it is the path's fill-opacity. Coordinates are rounded to two decimals.
     """
     x, y, width, height = outline.bounds
     paths = ""
     for layer in outline.layers:
         d = "".join(COMMANDS[kind] + " ".join(f"{_number(px - x)} {_number(py - y)}" for px, py in points) for kind, points in layer.elements)
-        opacity = layer.opacity * HIERARCHY[layer.level]
+        opacity = layer.opacity * hierarchy[layer.level]
         attribute = f' fill-opacity="{_number(opacity)}"' if opacity < 1 else ""
         paths += f'<path fill="currentColor"{attribute} d="{d}"/>'
     return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {_number(width)} {_number(height)}">{paths}</svg>\n'
