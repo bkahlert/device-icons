@@ -11,8 +11,8 @@ from pathlib import Path
 CATALOG = Path("/System/Library/CoreServices/CoreGlyphs.bundle/Contents/Resources/Assets.car")
 # Legacy symbol names mapped to the current ones, which are the only ones the catalog knows.
 ALIASES = CATALOG.with_name("name_aliases.strings")
-# CoreUI's glyph weight runs 1 ultralight to 9 black, its glyph size 1 small to 3 large; 0 is unspecified and resolves
-# to these two, Finder's defaults.
+# CoreUI counts the weights 1 ultralight to 9 black and the scales 1 small to 3 large; 0 is unspecified and resolves to
+# these two, Finder's defaults.
 REGULAR = 4
 MEDIUM = 2
 POINT_SIZE = 100.0
@@ -22,7 +22,7 @@ MOVE, LINE, QUAD, CURVE, CLOSE = range(5)
 POINTS = {MOVE: 1, LINE: 1, QUAD: 2, CURVE: 3, CLOSE: 0}
 COMMANDS = {MOVE: "M", LINE: "L", QUAD: "Q", CURVE: "C", CLOSE: "Z"}
 
-GLYPH = "namedVectorGlyphWithName:scaleFactor:deviceIdiom:glyphSize:glyphWeight:glyphPointSize:appearanceName:"
+SYMBOL = "namedVectorGlyphWithName:scaleFactor:deviceIdiom:glyphSize:glyphWeight:glyphPointSize:appearanceName:"
 UTF8 = 0x08000100
 
 
@@ -108,7 +108,7 @@ class _Catalog:
         self.graphics.CGPathGetPathBoundingBox.restype = Rect
         self.graphics.CGPathGetPathBoundingBox.argtypes = [ctypes.c_void_p]
         self.graphics.CGPathApply.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
-        self.glyph = self._send(
+        self.symbol = self._send(
             ctypes.c_void_p, ctypes.c_void_p, ctypes.c_double, ctypes.c_long, ctypes.c_long, ctypes.c_long, ctypes.c_double, ctypes.c_void_p
         )
         self.path = self._send(ctypes.c_void_p)
@@ -121,10 +121,10 @@ class _Catalog:
     def outline(self, symbol_name: str) -> Outline | None:
         pool = self.objc.objc_autoreleasePoolPush()
         try:
-            glyph = self.glyph(self.catalog, self._selector(GLYPH), self._string(symbol_name), 1.0, 0, MEDIUM, REGULAR, POINT_SIZE, None)
-            if not glyph:
+            symbol = self.symbol(self.catalog, self._selector(SYMBOL), self._string(symbol_name), 1.0, 0, MEDIUM, REGULAR, POINT_SIZE, None)
+            if not symbol:
                 return None
-            path = self.path(glyph, self._selector("CGPath"))
+            path = self.path(symbol, self._selector("CGPath"))
             elements: list[tuple[int, list[tuple[float, float]]]] = []
 
             @ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.POINTER(PathElement))
