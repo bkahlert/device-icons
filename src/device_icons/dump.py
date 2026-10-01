@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from device_icons import coretypes, finder, icns, launchservices
+from device_icons import coretypes, finder, icns, launchservices, output
 from device_icons.coretypes import TypeDeclaration
 
 DROPPED = ("no type", "no icon", "no sidebar icon")
@@ -22,6 +22,8 @@ LEAD = "The icon Finder draws for each model identifier, dumped from `CoreTypes.
 # Rendered widths in README.md: the icon is 1024 px, the sidebar icon 64 px for a 32 pt slot.
 ICON_WIDTH = 128
 SIDEBAR_ICON_WIDTH = 32
+HEADERS = ("Model identifier", "Type identifier", "Kind", "Icon", "Sidebar icon")
+RULE = ("---", "---", "---", ":-:", ":-:")
 
 
 @dataclass(frozen=True)
@@ -113,65 +115,20 @@ def markdown(rows: list[Row], horizontal: bool = False) -> str:
     """Return README.md: LEAD and a table with a row per model identifier, or a column per one if horizontal."""
     cells = [
         (
-            f"`{row.model_identifier}`",
-            f"`{row.type_identifier}`",
+            row.model_identifier,
+            output.code(row.type_identifier),
             row.kind,
             f'<img src="{row.icon.as_posix()}" alt="{row.icon.stem}" width="{ICON_WIDTH}">',
             f'<img src="{row.sidebar_icon.as_posix()}" alt="{row.sidebar_icon.stem}" width="{SIDEBAR_ICON_WIDTH}">',
         )
         for row in rows
     ]
-    headers = ("Model identifier", "Type identifier", "Kind", "Icon", "Sidebar icon")
-    if horizontal:
-        table = [
-            (headers[0], *(_stacked(row.model_identifier) for row in rows)),
-            ("---", *[":-:"] * len(rows)),
-            *((header, *(cell[index] for cell in cells)) for index, header in enumerate(headers) if index),
-        ]
-    else:
-        table = [headers, ("---", "---", "---", ":-:", ":-:"), *cells]
-    return "\n".join([LEAD, "", *(f"| {' | '.join(line)} |" for line in table)]) + "\n"
-
-
-def _stacked(model_identifier: str) -> str:
-    """Return the model identifier in code, an @KEY=value suffix on two more lines so the column stays narrow."""
-    head, at, rest = model_identifier.partition("@")
-    if not at:
-        return f"`{head}`"
-    key, equals, value = rest.partition("=")
-    return f"`{head}`<br/>`@{key}{equals}`<br/>`{value}`"
-
-
-def clear(out: Path) -> None:
-    """Empty the output directory, creating it if missing.
-
-    Exits if it is not a directory, or holds anything but an earlier dump and .DS_Store; a README.md is an earlier
-    dump's only when it starts with LEAD.
-    """
-    if not out.exists():
-        out.mkdir(parents=True)
-        return
-    if not out.is_dir():
-        sys.exit(f"{out} is not a directory")
-    contents = [path for path in out.iterdir() if path.name != ".DS_Store"]
-    if not all(_ours(path) for path in contents):
-        sys.exit(f"{out} is not empty and not an earlier dump; refusing to clear it")
-    for path in contents:
-        if path.is_dir() and not path.is_symlink():
-            shutil.rmtree(path)
-        else:
-            path.unlink()
-
-
-def _ours(path: Path) -> bool:
-    if path.name == "README.md":
-        return path.is_file() and path.read_text(errors="replace").startswith(LEAD)
-    return path.name in OURS
+    return "\n".join([LEAD, "", *output.table(HEADERS, RULE, cells, horizontal)]) + "\n"
 
 
 def write(out: Path, laid: Layout, horizontal: bool = False) -> None:
     """Clear the output directory, then write the layout's files, relative links, index.json, and README.md."""
-    clear(out)
+    output.clear(out, OURS, LEAD)
     for target, source in laid.files.items():
         (out / target).parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, out / target)

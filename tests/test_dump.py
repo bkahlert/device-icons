@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from device_icons import coretypes
-from device_icons.dump import DROPPED, LEAD, Layout, Placement, Row, clear, declared, dump, layout, markdown, write
+from device_icons.dump import DROPPED, LEAD, Layout, Placement, Row, declared, dump, layout, markdown, write
 
 
 class TestLayout:
@@ -182,59 +182,6 @@ class TestMarkdown:
                 '| Icon | <img src="icons/com.apple.xserve.png" alt="com.apple.xserve" width="128"> | <img src="icons/com.apple.macpro-2019-rackmount.png" alt="com.apple.macpro-2019-rackmount" width="128"> |',
                 '| Sidebar icon | <img src="sidebar/SidebarXserve.png" alt="SidebarXserve" width="32"> | <img src="sidebar/com.apple.macpro-2019-rackmount.png" alt="com.apple.macpro-2019-rackmount" width="32"> |',
             ]
-
-
-class TestClear:
-    def test_creates_a_missing_directory(self, tmp_path):
-        out = tmp_path / "out"
-
-        clear(out)
-
-        assert out.is_dir()
-        assert not any(out.iterdir())
-
-    def test_accepts_an_empty_directory(self, tmp_path):
-        clear(tmp_path)
-
-        assert tmp_path.is_dir()
-
-    def test_empties_an_earlier_dump(self, tmp_path):
-        (tmp_path / "index.json").write_text("{}")
-        (tmp_path / "README.md").write_text(markdown([]))
-        (tmp_path / "icons").mkdir()
-        (tmp_path / "icons" / "a.png").write_bytes(b"")
-        (tmp_path / "by-sidebar").mkdir()
-        (tmp_path / ".DS_Store").write_bytes(b"")
-
-        clear(tmp_path)
-
-        assert [path.name for path in tmp_path.iterdir()] == [".DS_Store"]
-
-    def test_refuses_a_readme_that_is_not_a_dumps(self, tmp_path):
-        (tmp_path / "index.json").write_text("{}")
-        (tmp_path / "README.md").write_text("# Icons\n")
-
-        with pytest.raises(SystemExit, match="not an earlier dump"):
-            clear(tmp_path)
-
-        assert (tmp_path / "README.md").read_text() == "# Icons\n"
-
-    def test_refuses_a_directory_with_foreign_content(self, tmp_path):
-        (tmp_path / "index.json").write_text("{}")
-        (tmp_path / "thesis.tex").write_text("")
-
-        with pytest.raises(SystemExit, match="not an earlier dump"):
-            clear(tmp_path)
-
-        assert (tmp_path / "thesis.tex").is_file()
-        assert (tmp_path / "index.json").is_file()
-
-    def test_refuses_a_file(self, tmp_path):
-        file = tmp_path / "out"
-        file.write_text("")
-
-        with pytest.raises(SystemExit, match="not a directory"):
-            clear(file)
 
 
 class TestWrite:
