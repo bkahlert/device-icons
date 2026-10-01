@@ -56,6 +56,30 @@ class TestParser:
 
                 assert result.horizontal is True
 
+    class TestSymbols:
+        def test_defaults_to_every_device_type_into_out(self):
+            result = parser().parse_args(["symbols"])
+
+            assert (result.command, result.out, result.symbol_names, result.open, result.horizontal) == ("symbols", Path("out"), None, True, False)
+
+        def test_collects_repeated_symbol_names_and_the_output_directory(self):
+            result = parser().parse_args(["symbols", "--symbol", "macpro.gen3", "--symbol", "xserve.raid", "docs/symbols"])
+
+            assert result.symbol_names == ["macpro.gen3", "xserve.raid"]
+            assert result.out == Path("docs/symbols")
+
+        class TestNoOpen:
+            def test_turns_opening_off(self):
+                result = parser().parse_args(["symbols", "--no-open"])
+
+                assert result.open is False
+
+        class TestHorizontal:
+            def test_turns_the_table(self):
+                result = parser().parse_args(["symbols", "--horizontal"])
+
+                assert result.horizontal is True
+
     class TestPreview:
         def test_collects_the_model_identifiers_and_the_name(self):
             result = parser().parse_args(["preview", "--name", "Rack", "MacPro7,1@ECOLOR=226,226,224"])
@@ -176,6 +200,43 @@ class TestMain:
                 main(["dump", "--horizontal", "--type", "com.apple.xserve-xeon", str(out)])
 
                 assert "| Type identifier | `com.apple.xserve-xeon` |" in (out / "README.md").read_text()
+
+    @pytest.mark.macos
+    class TestSymbols:
+        def test_writes_the_symbols_and_prints_the_summary(self, tmp_path, capsys, fake_command):
+            fake_command("open")
+            out = tmp_path / "out"
+
+            result = main(["symbols", "--symbol", "macpro.gen3", str(out)])
+
+            assert result == 0
+            assert re.match(r"\d+ model identifiers: \d+ placed under 1 symbols in ", capsys.readouterr().out)
+            assert "macpro.gen3" in json.loads((out / "index.json").read_text())["symbols"]
+
+        def test_opens_the_output_directory_in_finder(self, tmp_path, fake_command):
+            opening = fake_command("open")
+            out = tmp_path / "out"
+
+            main(["symbols", "--symbol", "macpro.gen3", str(out)])
+
+            assert [arguments for _, arguments in opening.calls()] == [str(out)]
+
+        class TestNoOpen:
+            def test_leaves_finder_alone(self, tmp_path, fake_command):
+                opening = fake_command("open")
+
+                main(["symbols", "--no-open", "--symbol", "macpro.gen3", str(tmp_path / "out")])
+
+                assert not opening.log.exists()
+
+        class TestHorizontal:
+            def test_lays_the_table_out_by_column(self, tmp_path, fake_command):
+                fake_command("open")
+                out = tmp_path / "out"
+
+                main(["symbols", "--horizontal", "--symbol", "macpro.gen3", str(out)])
+
+                assert "| Symbol name | `macpro.gen3` |" in (out / "README.md").read_text()
 
 
 def preview_as_on_macos(*arguments: str) -> int:
