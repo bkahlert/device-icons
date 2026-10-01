@@ -24,7 +24,7 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["macos: calls iconutil, osascript, or dns-sd; skipped off macOS"]
+markers = ["macos: calls iconutil, osascript, dns-sd, or CoreUI; skipped off macOS"]
 
 [tool.ruff]
 line-length = 160
