@@ -9,7 +9,7 @@ from pathlib import Path
 
 from device_icons import coreglyphs, coretypes, launchservices, output
 from device_icons.coreglyphs import HIERARCHY, Outline
-from device_icons.dump import declared
+from device_icons.icons import declared
 
 DROPPED = ("no type", "no symbol name", "no symbol")
 OURS = ("index.json", "README.md", "symbols")

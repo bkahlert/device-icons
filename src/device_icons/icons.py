@@ -1,4 +1,4 @@
-"""The dump: the icon and sidebar icon of every device type, laid out for picking in Finder."""
+"""The icons: the icon and sidebar icon of every device type, laid out for picking in Finder."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from device_icons.coretypes import TypeDeclaration
 
 DROPPED = ("no type", "no icon", "no sidebar icon")
 OURS = ("index.json", "README.md", "icons", "sidebar", "by-sidebar")
-# The first line of a dump's README.md; a README.md without it belongs to someone else and stays.
+# The first line of a run's README.md; a README.md without it belongs to someone else and stays.
 LEAD = "The icon Finder draws for each model identifier, dumped from `CoreTypes.bundle` by [device-icons](https://github.com/bkahlert/device-icons)."
 # Rendered widths in README.md: the icon is 1024 px, the sidebar icon 64 px for a 32 pt slot.
 ICON_WIDTH = 128
@@ -49,7 +49,7 @@ class Row:
 
 @dataclass
 class Layout:
-    """What a dump writes; every path but the sources in files is relative to the output directory."""
+    """What a run writes; every path but the sources in files is relative to the output directory."""
 
     sidebars: dict[str, dict] = field(default_factory=dict)
     dropped: dict[str, list[str]] = field(default_factory=lambda: {reason: [] for reason in DROPPED})
@@ -140,8 +140,8 @@ def write(out: Path, laid: Layout, horizontal: bool = False) -> None:
     (out / "README.md").write_text(markdown(laid.rows, horizontal))
 
 
-def dump(out: Path, type_identifiers: list[str] | None = None, model_identifiers: list[str] | None = None, horizontal: bool = False) -> str:
-    """Dump the icons of every device type, or of the given type or model identifiers, into out; return a summary line.
+def icons(out: Path, type_identifiers: list[str] | None = None, model_identifiers: list[str] | None = None, horizontal: bool = False) -> str:
+    """Write the icon and sidebar icon of every device type, or of the given type or model identifiers, into out; return a summary line.
 
     horizontal lays README.md's table out with a column per model identifier.
 

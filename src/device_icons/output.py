@@ -1,4 +1,4 @@
-"""What dump and symbols write alike: the output directory, cleared before a run, and the Markdown table."""
+"""What icons write and symbols write share: the output directory, cleared before a run, and the Markdown table."""
 
 from __future__ import annotations
 

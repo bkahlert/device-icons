@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from device_icons import coretypes
-from device_icons.dump import DROPPED, LEAD, Layout, Placement, Row, declared, dump, layout, markdown, write
+from device_icons.icons import DROPPED, LEAD, Layout, Placement, Row, declared, icons, layout, markdown, write
 
 
 class TestLayout:
@@ -143,7 +143,7 @@ class TestDeclared:
 
 
 class TestMarkdown:
-    def test_starts_with_the_lead_that_marks_it_as_a_dump(self):
+    def test_starts_with_the_lead_that_marks_it_as_ours(self):
         result = markdown([])
 
         assert result.startswith(LEAD)
@@ -226,7 +226,7 @@ class TestDump:
     def test_writes_the_given_types_with_the_model_identifiers_that_resolve_to_them(self, tmp_path):
         out = tmp_path / "out"
 
-        result = dump(out, ["com.apple.xserve-xeon"])
+        result = icons(out, ["com.apple.xserve-xeon"])
 
         index = json.loads((out / "index.json").read_text())
         entry = index["sidebars"]["SidebarXserve"]["icons"]["com.apple.xserve"]
@@ -241,7 +241,7 @@ class TestDump:
     def test_writes_the_table(self, tmp_path):
         out = tmp_path / "out"
 
-        dump(out, ["com.apple.xserve-xeon"])
+        icons(out, ["com.apple.xserve-xeon"])
 
         assert "| `Xserve3,1` | `com.apple.xserve-xeon` | Mac | <img" in (out / "README.md").read_text()
 
@@ -249,7 +249,7 @@ class TestDump:
         def test_writes_only_those_with_the_types_they_resolve_to(self, tmp_path):
             out = tmp_path / "out"
 
-            result = dump(out, model_identifiers=["Xserve3,1", "MacPro7,1"])
+            result = icons(out, model_identifiers=["Xserve3,1", "MacPro7,1"])
 
             index = json.loads((out / "index.json").read_text())
             placed = sorted(name for group in index["sidebars"].values() for entry in group["icons"].values() for name in entry["model_identifiers"])
@@ -258,7 +258,7 @@ class TestDump:
 
         def test_refuses_one_that_is_not_declared(self, tmp_path):
             with pytest.raises(SystemExit, match=r"^not declared in .*: Foo1,1$"):
-                dump(tmp_path / "out", model_identifiers=["Xserve3,1", "Foo1,1"])
+                icons(tmp_path / "out", model_identifiers=["Xserve3,1", "Foo1,1"])
 
         def test_refuses_a_display_as_its_type_is_no_device(self, tmp_path):
             # A display's type conforms to public.display, not to public.device as LaunchServices is asked; which
@@ -274,19 +274,19 @@ class TestDump:
                 pytest.skip("no display declared on this macOS")
 
             with pytest.raises(SystemExit, match=rf"^no type in .*: {re.escape(displays[0])}$"):
-                dump(tmp_path / "out", model_identifiers=[displays[0]])
+                icons(tmp_path / "out", model_identifiers=[displays[0]])
 
         def test_refuses_one_whose_type_has_no_sidebar_icon(self, tmp_path):
             with pytest.raises(SystemExit, match=r"^no sidebar icon in .*: Watch7,1$"):
-                dump(tmp_path / "out", model_identifiers=["Watch7,1"])
+                icons(tmp_path / "out", model_identifiers=["Watch7,1"])
 
     def test_refuses_a_type_that_is_not_declared(self, tmp_path):
         with pytest.raises(SystemExit, match="com.apple.no-such-device"):
-            dump(tmp_path / "out", ["com.apple.no-such-device"])
+            icons(tmp_path / "out", ["com.apple.no-such-device"])
 
     def test_refuses_a_type_without_sidebar_icon_naming_what_is_missing(self, tmp_path):
         with pytest.raises(SystemExit, match=r"^no sidebar icon in .*: com\.apple\.device$"):
-            dump(tmp_path / "out", ["com.apple.device"])
+            icons(tmp_path / "out", ["com.apple.device"])
 
 
 XSERVE = Path("/w/com.apple.xserve.iconset/icon_512x512@2x.png")
